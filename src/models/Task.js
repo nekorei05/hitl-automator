@@ -32,9 +32,7 @@ const TaskSchema = new mongoose.Schema({
   retryCount: { type: Number, default: 0 },
   ragContext: String,           
 
-  // Idempotency
-  idempotencyKey: { type: String, unique: true },
-
+  
   // Timing
   approvedAt: Date,
   completedAt: Date

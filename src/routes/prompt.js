@@ -11,21 +11,17 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'jobDescription is required' });
     }
 
-    const newTask = new Task({
-      type: 'email',
-      jobDescription,
-      recipient: 'hr@company.com',
-      subject: 'Application for Backend Developer Role',
-      body: 'Dear HR,\n\nI am writing to express my interest in the Backend Developer position. Please find my details attached.\n\nBest regards,\nApplicant',
-      originalPrompt: jobDescription,
-      status: 'PENDING_APPROVAL'
-    });
+    const processPrompt = require('../services/geminiService').processPrompt;
+    const aiResult = await processPrompt(jobDescription);
 
-    const savedTask = await newTask.save();
-    res.status(201).json(savedTask);
-  } catch (error) {
-    console.error('Error creating task from prompt:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    if (aiResult.task) {
+      return res.status(201).json(aiResult.task);
+    } else {
+      return res.status(200).json({ message: aiResult.text });
+    }
+  } catch (err) {
+    console.error(" ERROR IN /prompt:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
