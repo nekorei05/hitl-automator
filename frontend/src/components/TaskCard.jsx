@@ -1,12 +1,11 @@
 import { useState } from "react";
 import AgentLogs from "./AgentLogs";
-
 const STATUS_STYLES = {
-  pending:   "bg-zinc-700 text-zinc-300",
-  running:   "bg-blue-900 text-blue-300",
-  completed: "bg-emerald-900 text-emerald-300",
-  rejected:  "bg-red-900 text-red-300",
-  failed:    "bg-red-900 text-red-400",
+  PENDING_APPROVAL: "bg-yellow-900 text-yellow-300",
+  APPROVED: "bg-blue-900 text-blue-300",
+  COMPLETED: "bg-emerald-900 text-emerald-300",
+  REJECTED: "bg-red-900 text-red-300",
+  FAILED: "bg-red-900 text-red-400",
 };
 
 export default function TaskCard({ task, onApprovalNeeded }) {
@@ -33,7 +32,7 @@ export default function TaskCard({ task, onApprovalNeeded }) {
       )}
 
       {/* HITL banner */}
-      {task.requiresApproval && task.status !== "completed" && task.status !== "rejected" && (
+      {task.status === "PENDING_APPROVAL" && (
         <div className="mt-3 flex items-center justify-between bg-yellow-950/50 border border-yellow-600/30 rounded px-3 py-2">
           <span className="text-xs text-yellow-300 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse inline-block" />
