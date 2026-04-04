@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const Task = require('../models/Task');
 const taskWorker = require('../workers/taskWorker');
+const { generateEmail } = require('../services/aiService');
 
 const TYPE_RULES = [
-  { type: 'email',   keywords: ['email', 'mail', 'send message', 'outreach', 'smtp'] },
+  { type: 'email', keywords: ['email', 'mail', 'send message', 'outreach', 'smtp'] },
   { type: 'invoice', keywords: ['invoice', 'bill', 'payment', 'charge', 'receipt'] },
 ];
 
@@ -13,7 +14,7 @@ function inferType(input) {
   for (const rule of TYPE_RULES) {
     if (rule.keywords.some((kw) => lower.includes(kw))) return rule.type;
   }
-  return 'email'; 
+  return 'email';
 }
 // GET /api/tasks
 router.get('/', async (req, res) => {
@@ -36,12 +37,24 @@ router.post('/', async (req, res) => {
     }
 
     const trimmed = input.trim();
+    const type = inferType(trimmed);
+
+    let preview = undefined;
+    if (type === 'email') {
+      try {
+        preview = await generateEmail(trimmed);
+      } catch (aiError) {
+        console.error('[POST /tasks] AI preview generation failed:', aiError);
+        preview = 'AI email generation failed. Please draft manually.';
+      }
+    }
 
     const task = await Task.create({
-      jobDescription: trimmed,         
-      type: inferType(trimmed),        
+      jobDescription: trimmed,
+      type,
       status: 'PENDING_APPROVAL',
       originalPrompt: trimmed,
+      preview,
     });
 
     res.status(201).json(task);
@@ -64,7 +77,6 @@ router.post('/:id/approve', async (req, res) => {
     task.approvedAt = new Date();
     await task.save();
 
-    // Hand off to worker — runs async, doesn't block the HTTP response
     taskWorker.run(task).catch((err) =>
       console.error(`[Worker] Failed for task ${task._id}:`, err)
     );
@@ -79,7 +91,7 @@ router.post('/:id/approve', async (req, res) => {
 //  POST /api/tasks/:id/reject 
 router.post('/:id/reject', async (req, res) => {
   try {
-    const { reason } = req.body; // optional rejection reason from frontend
+    const { reason } = req.body;
 
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ error: 'Task not found' });

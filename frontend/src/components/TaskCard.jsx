@@ -46,6 +46,18 @@ export default function TaskCard({ task, onApprovalNeeded }) {
           </button>
         </div>
       )}
+      {task.subject && (
+  <div className="mt-3 text-sm text-zinc-300">
+    <p className="font-semibold text-zinc-200">Subject:</p>
+    <p>{task.subject}</p>
+  </div>
+)}
+
+{task.body && (
+  <div className="mt-2 bg-zinc-800 p-3 rounded text-sm text-zinc-300 whitespace-pre-line">
+    {task.body}
+  </div>
+)}
 
       {/* Logs toggle */}
       {hasLogs && (

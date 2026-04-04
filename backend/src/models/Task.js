@@ -20,6 +20,7 @@ const TaskSchema = new mongoose.Schema({
   recipient: String,
   subject: String,
   body: String,
+  preview : String,
 
   // Invoice 
   clientName: String,
