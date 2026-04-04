@@ -33,7 +33,16 @@ const TaskSchema = new mongoose.Schema({
   retryCount: { type: Number, default: 0 },
   ragContext: String,           
 
-  
+  // Match analysis (NEW)
+matchLevel: {
+  type: String,
+  enum: ['HIGH', 'MEDIUM', 'LOW'],
+  default: 'MEDIUM'
+},
+matchReason: {
+  type: String
+},
+
   // Timing
   approvedAt: Date,
   completedAt: Date
