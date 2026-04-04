@@ -74,22 +74,22 @@ const tools = [
         name: "get_my_profile",
         description: "Fetch the user's profile details including skills and projects."
       },
-      {
-        name: "stage_outreach",
-        description: "Stage the generated outreach email as a task.",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            jobDescription: { type: "STRING" },
-            recipient: { type: "STRING" },
-            subject: { type: "STRING" },
-            body: { type: "STRING" },
-            matchLevel: { type: "STRING" },
-            reason: { type: "STRING" }
-          },
-          required: ["jobDescription", "recipient", "subject", "body", "matchLevel"]
-        }
-      }
+     {
+  name: "stage_outreach",
+  description: "Stage the generated outreach email as a task.",
+  parameters: {
+    type: "OBJECT",
+    properties: {
+      jobDescription: { type: "STRING" },
+      recipient: { type: "STRING" },
+      subject: { type: "STRING" },
+      body: { type: "STRING" },
+      matchLevel: { type: "STRING" },
+      matchReason: { type: "STRING" }
+    },
+    required: ["jobDescription", "recipient", "subject", "body"]
+  }
+}
     ]
   }
 ];
