@@ -1,6 +1,6 @@
 const Task = require('../models/Task');
 
-async function stageEmail({ jobDescription, recipient, subject, body, matchLevel, matchReason }) {
+async function stageEmail({ jobDescription, recipient, subject, body, matchLevel, matchReason, suggestions }) {
   try {
     const newTask = new Task({
       type:           'email',
@@ -10,8 +10,9 @@ async function stageEmail({ jobDescription, recipient, subject, body, matchLevel
       subject,
       body,
       originalPrompt: jobDescription,
-      matchLevel:     matchLevel  || null,
-      matchReason:    matchReason || null,
+      matchLevel:     matchLevel   || null,
+      matchReason:    matchReason  || null,
+      suggestions:    Array.isArray(suggestions) ? suggestions : [],
     });
 
     const savedTask = await newTask.save();

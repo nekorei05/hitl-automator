@@ -17,7 +17,8 @@ WORKFLOW:
 2. Analyze job description vs profile
 3. Determine match level: HIGH / MEDIUM / LOW
 4. ALWAYS generate an email (never skip)
-5. Call the tool stage_outreach
+5. Generate 2–3 improvement suggestions based on missing skills
+6. Call the tool stage_outreach
 
 -------------------------
 
@@ -40,8 +41,7 @@ WRITING RULES:
 TONE:
 - HIGH → confident
 - MEDIUM → balanced
-- LOW → honest + growth-focused
-
+- LOW → honest, acknowledge gap clearly, show intent to learn (not confident tone)
 -------------------------
 
 IMPORTANT RULES:
@@ -50,6 +50,15 @@ IMPORTANT RULES:
 - DO NOT fabricate skills
 - ALWAYS call get_my_profile first
 - ALWAYS call stage_outreach after generating email
+
+-------------------------
+
+SUGGESTIONS:
+
+Also generate 2–3 improvement suggestions:
+- Identify missing skills
+- Be actionable
+- Be relevant to the job
 
 -------------------------
 
@@ -63,7 +72,8 @@ Call stage_outreach with:
   subject,
   body,
   matchLevel,
-  reason
+  matchReason,
+  suggestions
 }
 `;
 
@@ -74,22 +84,26 @@ const tools = [
         name: "get_my_profile",
         description: "Fetch the user's profile details including skills and projects."
       },
-     {
-  name: "stage_outreach",
-  description: "Stage the generated outreach email as a task.",
-  parameters: {
-    type: "OBJECT",
-    properties: {
-      jobDescription: { type: "STRING" },
-      recipient: { type: "STRING" },
-      subject: { type: "STRING" },
-      body: { type: "STRING" },
-      matchLevel: { type: "STRING" },
-      matchReason: { type: "STRING" }
-    },
-    required: ["jobDescription", "recipient", "subject", "body"]
-  }
-}
+      {
+        name: "stage_outreach",
+        description: "Stage the generated outreach email as a task.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            jobDescription: { type: "STRING" },
+            recipient: { type: "STRING" },
+            subject: { type: "STRING" },
+            body: { type: "STRING" },
+            matchLevel: { type: "STRING" },
+            matchReason: { type: "STRING" },
+            suggestions: {
+              type: "ARRAY",
+              items: { type: "STRING" }
+            }
+          },
+          required: ["jobDescription", "recipient", "subject", "body"]
+        }
+      }
     ]
   }
 ];
@@ -100,8 +114,6 @@ const model = genAI.getGenerativeModel({
   tools
 });
 
-
-//main
 async function processPrompt(jobDescription) {
   try {
     console.log("\n=== NEW TASK ===");
@@ -122,22 +134,18 @@ async function processPrompt(jobDescription) {
 
       let toolResult;
 
-      //get profile
       if (call.name === "get_my_profile") {
         const profile = await getProfile();
-
         console.log("Profile fetched");
-
         toolResult = { profile };
       }
 
-      //stage email
       else if (call.name === "stage_outreach") {
         const args = call.args;
 
         console.log("Staging email...");
         console.log("Match Level:", args.matchLevel);
-        console.log("Reason:", args.reason);
+        console.log("Match Reason:", args.matchReason);
 
         stagedTask = await stageEmail({
           jobDescription: args.jobDescription,
@@ -145,7 +153,8 @@ async function processPrompt(jobDescription) {
           subject: args.subject,
           body: args.body,
           matchLevel: args.matchLevel,
-          matchReason: args.reason
+          matchReason: args.matchReason,
+          suggestions: args.suggestions || []
         });
 
         toolResult = {
@@ -158,7 +167,6 @@ async function processPrompt(jobDescription) {
         toolResult = { error: "Unknown tool" };
       }
 
-      // send tool response back to AI
       result = await chat.sendMessage([
         {
           functionResponse: {

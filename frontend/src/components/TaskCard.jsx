@@ -24,6 +24,7 @@ function StatusBadge({ status }) {
   );
 }
 
+// match badge
 const MATCH_BADGE = {
   HIGH:   { label: "High Match",   classes: "bg-emerald-950 text-emerald-400 border-emerald-800" },
   MEDIUM: { label: "Partial Match", classes: "bg-yellow-950 text-yellow-400 border-yellow-800" },
@@ -40,60 +41,102 @@ function MatchBadge({ level }) {
   );
 }
 
-const MATCH_PANEL = {
+const MATCH_CONFIG = {
   HIGH: {
     icon: "✓",
-    heading: "Strong match",
+    label: "Strong Match",
     summary: "Your skills align well with this role.",
-    classes: {
-      wrap:    "bg-emerald-900/10 border-emerald-500/20",
-      icon:    "text-emerald-400",
-      heading: "text-emerald-400",
-      reason:  "text-emerald-200/70",
-    },
+    chip: "bg-emerald-900/30 text-emerald-400 border-emerald-700/40",
+    wrap: "bg-emerald-900/10 border-emerald-500/20",
+    heading: "text-emerald-400",
+    muted: "text-emerald-200/60",
+    divider: "border-emerald-900/40",
   },
   MEDIUM: {
     icon: "⚡",
-    heading: "Partial match",
-    summary: "You meet some requirements, but there are gaps.",
-    classes: {
-      wrap:    "bg-yellow-900/10 border-yellow-500/20",
-      icon:    "text-yellow-400",
-      heading: "text-yellow-400",
-      reason:  "text-yellow-200/70",
-    },
+    label: "Partial Match",
+    summary: "You meet some requirements, but gaps exist.",
+    chip: "bg-yellow-900/30 text-yellow-400 border-yellow-700/40",
+    wrap: "bg-yellow-900/10 border-yellow-500/20",
+    heading: "text-yellow-400",
+    muted: "text-yellow-200/60",
+    divider: "border-yellow-900/40",
   },
   LOW: {
     icon: "⚠",
-    heading: "Low match",
-    summary: "Your profile does not fully align with the required skills.",
-    classes: {
-      wrap:    "bg-red-900/10 border-red-500/20",
-      icon:    "text-red-400",
-      heading: "text-red-400",
-      reason:  "text-red-200/70",
-    },
+    label: "Low Match",
+summary: "This role is a weak fit based on your current skills.",
+    chip: "bg-red-900/30 text-red-400 border-red-700/40",
+    wrap: "bg-red-900/10 border-red-500/20",
+    heading: "text-red-400",
+    muted: "text-red-200/60",
+    divider: "border-red-900/40",
   },
 };
 
-function MatchPanel({ level, reason }) {
-  const config = MATCH_PANEL[level?.toUpperCase()];
-  if (!config) return null;
+function MatchPanel({ level, reason, suggestions }) {
+  const cfg = MATCH_CONFIG[level?.toUpperCase()];
+  if (!cfg) return null;
+
+  const suggestionList = Array.isArray(suggestions)
+    ? suggestions.filter(Boolean)
+    : typeof suggestions === "string" && suggestions.trim()
+    ? suggestions.split(/[,\n]/).map(s => s.trim()).filter(Boolean)
+    : [];
 
   return (
-    <div className={`rounded-lg border px-4 py-3 ${config.classes.wrap}`}>
-      <div className="flex items-center gap-2 mb-1">
-        <span className={`text-xs ${config.classes.icon}`}>{config.icon}</span>
-        <span className={`text-xs font-semibold uppercase tracking-wider ${config.classes.heading}`}>
-          {config.heading}
+    <div className={`rounded-lg border overflow-hidden ${cfg.wrap}`}>
+
+      <div className="flex items-center gap-2.5 px-4 py-3">
+        <span className={`text-sm ${cfg.heading}`}>{cfg.icon}</span>
+        <span className={`text-xs font-semibold uppercase tracking-wider ${cfg.heading}`}>
+          {cfg.label}
         </span>
-        <span className="text-xs text-zinc-500">— {config.summary}</span>
+        <span className="text-xs text-zinc-500">— {cfg.summary}</span>
       </div>
+
       {reason && (
-        <p className={`text-xs leading-relaxed mt-1 pl-4 ${config.classes.reason}`}>
-          {reason}
-        </p>
+        <div className={`border-t px-4 py-2.5 ${cfg.divider}`}>
+          <p className={`text-xs leading-relaxed ${cfg.muted}`}>{reason}</p>
+        </div>
       )}
+
+      {(level?.toUpperCase() === "LOW" || level?.toUpperCase() === "MEDIUM") &&
+        suggestionList.length > 0 && (
+        <div className={`border-t px-4 py-3 ${cfg.divider}`}>
+
+          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2.5">
+            To improve your chances
+          </p>
+
+          <div className="flex flex-col gap-2">
+            {suggestionList.map((s, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-0.5 font-mono text-xs ${cfg.chip}`}>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <p className="text-xs text-zinc-200 leading-relaxed">{s}</p>
+              </div>
+            ))}
+
+            <div className="mt-3 flex justify-end">
+  <button className="text-xs text-red-400 border border-red-800 px-3 py-1 rounded-md hover:bg-red-900/30">
+    Skip this role
+  </button>
+</div>
+          </div>
+        </div>
+      )}
+
+      {/* ── HIGH match affirmation ── */}
+      {level?.toUpperCase() === "HIGH" && (
+        <div className={`border-t px-4 py-2.5 ${cfg.divider}`}>
+          <p className="text-xs text-zinc-500">
+            Your profile is a strong fit. Review the email and approve when ready.
+          </p>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -116,7 +159,7 @@ function ActionButton({ onClick, disabled, variant, children }) {
   );
 }
 
-// main
+
 export default function TaskCard({ task, onUpdate }) {
   const [loading, setLoading]               = useState(false);
   const [actionError, setActionError]       = useState("");
@@ -126,7 +169,6 @@ export default function TaskCard({ task, onUpdate }) {
   const isResolved = ["COMPLETED", "REJECTED", "STALE"].includes(task.status);
   const matchLevel = task.matchLevel?.toUpperCase(); // HIGH | MEDIUM | LOW | undefined
 
-  // generate
   const handleGenerate = async () => {
     setLoading(true);
     setActionError("");
@@ -169,7 +211,7 @@ export default function TaskCard({ task, onUpdate }) {
     }
   };
 
-//reject
+  // reject
   const handleReject = async () => {
     setLoading(true);
     setActionError("");
@@ -201,14 +243,12 @@ export default function TaskCard({ task, onUpdate }) {
         <p className="mt-1.5 font-mono text-xs text-zinc-600">{task._id}</p>
       </div>
 
-      {/* ── 2. Match insight panel ── */}
       {matchLevel && (
         <div className="px-4 pb-3">
-          <MatchPanel level={matchLevel} reason={task.matchReason} />
+          <MatchPanel level={matchLevel} reason={task.matchReason} suggestions={task.suggestions} />
         </div>
       )}
 
-      {/* ── 3. States: loading / decline / generate / email ── */}
       <div className="px-4 pb-4 space-y-3">
 
         {/* Loading */}
@@ -259,7 +299,6 @@ export default function TaskCard({ task, onUpdate }) {
           </div>
         )}
 
-        {/* No email yet — initial state */}
         {!loading && !declineMessage && !hasEmail && !isResolved && (
           <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-800/40 px-4 py-3">
             <p className="text-xs text-zinc-500">No email generated yet</p>
@@ -293,7 +332,6 @@ export default function TaskCard({ task, onUpdate }) {
           </div>
         )}
 
-        {/* Resolved */}
         {isResolved && (
           <div className="flex items-center gap-1.5 text-xs text-zinc-600">
             <span>

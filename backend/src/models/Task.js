@@ -16,37 +16,31 @@ const TaskSchema = new mongoose.Schema({
     default: 'PENDING_APPROVAL'
   },
 
-  // Email 
-  recipient: String,
-  subject: String,
-  body: String,
-  preview : String,
+  // Email fields
+  recipient:  String,
+  subject:    String,
+  body:       String,
 
-  // Invoice 
-  clientName: String,
-  amount: Number,
+  // Invoice fields
+  clientName:  String,
+  amount:      Number,
   description: String,
 
-  // AI context
-  originalPrompt: String,
-  rejectionReason: String,
-  retryCount: { type: Number, default: 0 },
-  ragContext: String,           
+  // AI match analysis 
+  matchLevel:   { type: String, enum: ['HIGH', 'MEDIUM', 'LOW'], default: null },
+  matchReason:  { type: String, default: null },
+  suggestions:  { type: [String], default: [] },
 
-  // Match analysis (NEW)
-matchLevel: {
-  type: String,
-  enum: ['HIGH', 'MEDIUM', 'LOW'],
-  default: 'MEDIUM'
-},
-matchReason: {
-  type: String
-},
+  // AI context
+  originalPrompt:  String,
+  rejectionReason: String,
+  retryCount:      { type: Number, default: 0 },
+  ragContext:      String,
 
   // Timing
-  approvedAt: Date,
-  completedAt: Date
+  approvedAt:  Date,
+  completedAt: Date,
 
-}, { timestamps: true }); 
+}, { timestamps: true });
 
 module.exports = mongoose.model('Task', TaskSchema);
