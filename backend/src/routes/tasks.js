@@ -74,34 +74,22 @@ router.post('/:id/approve', async (req, res) => {
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
-    task.status = 'APPROVED';
+    // Simply mark the task as completed in the database
+    task.status = 'COMPLETED';
     task.approvedAt = new Date();
+    task.completedAt = new Date();
     
-    try {
-      if (task.type === 'email' && task.recipient && task.subject && task.body) {
-        await sendEmail({
-          to: task.recipient,
-          subject: task.subject,
-          text: task.body
-        });
-      }
+    await task.save();
 
-      task.status = 'COMPLETED';
-      task.completedAt = new Date();
-      await task.save();
-
-      res.json(task);
-    } catch (emailError) {
-      console.error('[POST /tasks/:id/approve] Email send failed:', emailError);
-      await task.save();
-      return res.status(500).json({ error: 'Failed to send email. Task marked as APPROVED.', details: emailError.message });
-    }
+    // Send the success response back to the frontend
+    res.json(task);
 
   } catch (err) {
     console.error('[POST /tasks/:id/approve]', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 //  POST /api/tasks/:id/reject 
 router.post('/:id/reject', async (req, res) => {
