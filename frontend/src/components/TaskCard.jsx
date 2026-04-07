@@ -221,7 +221,6 @@ export default function TaskCard({ task, onUpdate }) {
     const subject = task.subject || "";
     const body = task.body || "";
 
-    // Use BACKTICKS ` (not single quotes) and include the $ before each {
     const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
     window.open(url, "_blank");
@@ -299,7 +298,7 @@ export default function TaskCard({ task, onUpdate }) {
                 disabled={loading}
                 className="w-full bg-zinc-100 hover:bg-white text-black py-2 rounded-md text-sm font-bold transition-all disabled:opacity-50"
               >
-                {loading ? "Analyzing..." : "✨ Generate Match & Email"}
+                {loading ? "Analyzing..." : " Generate Match & Email"}
               </button>
             )}
 
