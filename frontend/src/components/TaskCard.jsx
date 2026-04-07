@@ -46,31 +46,31 @@ const MATCH_CONFIG = {
     icon: "✓",
     label: "Strong Match",
     summary: "Your skills align well with this role.",
-    chip: "bg-emerald-900/30 text-emerald-400 border-emerald-700/40",
-    wrap: "bg-emerald-900/10 border-emerald-500/20",
+    chip: "bg-emerald-900/20 text-emerald-400 border-emerald-800/40",
+    wrap: "bg-transparent border-zinc-800/80",
     heading: "text-emerald-400",
-    muted: "text-emerald-200/60",
-    divider: "border-emerald-900/40",
+    muted: "text-zinc-400",
+    divider: "border-zinc-800/60",
   },
   MEDIUM: {
     icon: "⚡",
     label: "Partial Match",
     summary: "You meet some requirements, but gaps exist.",
-    chip: "bg-yellow-900/30 text-yellow-400 border-yellow-700/40",
-    wrap: "bg-yellow-900/10 border-yellow-500/20",
+    chip: "bg-yellow-900/20 text-yellow-400 border-yellow-800/40",
+    wrap: "bg-transparent border-zinc-800/80",
     heading: "text-yellow-400",
-    muted: "text-yellow-200/60",
-    divider: "border-yellow-900/40",
+    muted: "text-zinc-400",
+    divider: "border-zinc-800/60",
   },
   LOW: {
     icon: "⚠",
     label: "Low Match",
-summary: "This role is a weak fit based on your current skills.",
-    chip: "bg-red-900/30 text-red-400 border-red-700/40",
-    wrap: "bg-red-900/10 border-red-500/20",
+    summary: "This role is a weak fit based on your current skills.",
+    chip: "bg-red-900/20 text-red-400 border-red-800/40",
+    wrap: "bg-transparent border-zinc-800/80",
     heading: "text-red-400",
-    muted: "text-red-200/60",
-    divider: "border-red-900/40",
+    muted: "text-zinc-400",
+    divider: "border-zinc-800/60",
   },
 };
 
@@ -115,20 +115,13 @@ function MatchPanel({ level, reason, suggestions }) {
                 <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-0.5 font-mono text-xs ${cfg.chip}`}>
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <p className="text-xs text-zinc-200 leading-relaxed">{s}</p>
+                <p className="text-xs text-zinc-300 leading-relaxed">{s}</p>
               </div>
             ))}
-
-            <div className="mt-3 flex justify-end">
-  <button className="text-xs text-red-400 border border-red-800 px-3 py-1 rounded-md hover:bg-red-900/30">
-    Skip this role
-  </button>
-</div>
           </div>
         </div>
       )}
 
-      {/* ── HIGH match affirmation ── */}
       {level?.toUpperCase() === "HIGH" && (
         <div className={`border-t px-4 py-2.5 ${cfg.divider}`}>
           <p className="text-xs text-zinc-500">
@@ -152,7 +145,7 @@ function ActionButton({ onClick, disabled, variant, children }) {
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-lg border px-4 py-1.5 text-xs font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${variants[variant]}`}
+      className={`rounded-lg border px-4 py-1.5 text-xs font-medium transition-all duration-150 flex-1 sm:flex-none disabled:cursor-not-allowed disabled:opacity-40 ${variants[variant]}`}
     >
       {children}
     </button>
@@ -164,10 +157,11 @@ export default function TaskCard({ task, onUpdate }) {
   const [loading, setLoading]               = useState(false);
   const [actionError, setActionError]       = useState("");
   const [declineMessage, setDeclineMessage] = useState("");
+  const [gmailOpened, setGmailOpened]       = useState(false);
 
   const hasEmail   = !!(task.subject || task.body);
   const isResolved = ["COMPLETED", "REJECTED", "STALE"].includes(task.status);
-  const matchLevel = task.matchLevel?.toUpperCase(); // HIGH | MEDIUM | LOW | undefined
+  const matchLevel = task.matchLevel?.toUpperCase(); 
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -197,7 +191,6 @@ export default function TaskCard({ task, onUpdate }) {
     }
   };
 
-  // approve
   const handleApprove = async () => {
     setLoading(true);
     setActionError("");
@@ -211,7 +204,6 @@ export default function TaskCard({ task, onUpdate }) {
     }
   };
 
-  // reject
   const handleReject = async () => {
     setLoading(true);
     setActionError("");
@@ -224,131 +216,123 @@ export default function TaskCard({ task, onUpdate }) {
       setLoading(false);
     }
   };
+    const handleOpenGmail = () => {
+    const to = task.recipient || "";
+    const subject = task.subject || "";
+    const body = task.body || "";
+
+    // Use BACKTICKS ` (not single quotes) and include the $ before each {
+    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    window.open(url, "_blank");
+    setGmailOpened(true);
+    setTimeout(() => setGmailOpened(false), 4000);
+  };
+
+
 
   return (
-    <div className="group rounded-xl border border-zinc-800 bg-zinc-900 transition-all duration-200 hover:border-zinc-700">
-
-      {/* ── 1. Job description + badges ── */}
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <p className="flex-1 min-w-0 text-sm font-medium leading-snug text-zinc-100">
-            {task.jobDescription || task.input}
-          </p>
-          {/* Status + match badges stacked on the right */}
-          <div className="flex flex-col items-end gap-1.5 shrink-0">
+    <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl transition-all duration-300 hover:border-zinc-700">
+      <div className="p-6 space-y-6">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <StatusBadge status={task.status} />
-            <MatchBadge level={matchLevel} />
+            <MatchBadge level={task.matchLevel} />
           </div>
+          <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+            ID: {task._id.slice(-6)}
+          </span>
         </div>
-        <p className="mt-1.5 font-mono text-xs text-zinc-600">{task._id}</p>
-      </div>
 
-      {matchLevel && (
-        <div className="px-4 pb-3">
-          <MatchPanel level={matchLevel} reason={task.matchReason} suggestions={task.suggestions} />
+        {/* Job Description Section */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Job Description</h3>
+          <p className="text-sm text-zinc-300 leading-relaxed line-clamp-3 italic">
+            "{task.jobDescription}"
+          </p>
         </div>
-      )}
 
-      <div className="px-4 pb-4 space-y-3">
+        {/* Match Panel (AI Analysis) */}
+        {task.matchLevel && (
+           <MatchPanel 
+             level={task.matchLevel} 
+             reason={task.matchReason} 
+             suggestions={task.matchSuggestions} 
+           />
+        )}
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-800/30 px-4 py-3">
-            <div className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-zinc-600 border-t-blue-400" />
-            <p className="text-xs text-zinc-400">AI is analysing the job description…</p>
+        {/* Decline Message if AI says no */}
+        {declineMessage && (
+          <div className="bg-red-950/20 border border-red-900/50 rounded-lg p-4">
+             <p className="text-xs text-red-400 leading-relaxed">{declineMessage}</p>
           </div>
         )}
 
-        {/* AI declined */}
-        {!loading && declineMessage && !hasEmail && (
-          <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 overflow-hidden">
-            <div className="flex items-center gap-2 border-b border-zinc-700 bg-zinc-800 px-4 py-2.5">
-              <span className="text-amber-400 text-sm">⚠</span>
-              <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider">
-                Not a match — no email generated
-              </p>
-            </div>
-            <div className="px-4 py-3">
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-                Why the AI declined
-              </p>
-              <p className="text-sm text-zinc-200 leading-relaxed">{declineMessage}</p>
-            </div>
-            <div className="border-t border-zinc-700 bg-zinc-900/60 px-4 py-3">
-              <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">
-                Next steps
-              </p>
-              <ul className="space-y-1.5">
-                {[
-                  "Add the missing skills to your profile and hit Try Again",
-                  "The AI will re-read your updated profile before deciding",
-                  "If the gap is too large, move on — this role isn't the right fit",
-                ].map((step, i) => (
-                  <li key={i} className="flex items-start gap-2 text-xs text-zinc-400">
-                    <span className="mt-0.5 shrink-0 text-zinc-600">→</span>
-                    {step}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-3 flex justify-end">
-                <ActionButton variant="amber" onClick={handleGenerate} disabled={loading}>
-                  ↺ Try Again
-                </ActionButton>
+        {/* Email Preview Section */}
+        {hasEmail && (
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Draft Email</h3>
+            <div className="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
+              <div className="px-4 py-2 border-b border-zinc-800 bg-zinc-900/50 flex flex-col gap-1">
+                <p className="text-[11px] text-zinc-500"><span className="text-zinc-600">To:</span> {task.recipient}</p>
+                <p className="text-[11px] text-zinc-500 font-medium"><span className="text-zinc-600">Subject:</span> {task.subject}</p>
+              </div>
+              <div className="bg-white text-black px-4 py-6">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed font-sans">
+                  {task.body}
+                </p>
               </div>
             </div>
           </div>
         )}
 
-        {!loading && !declineMessage && !hasEmail && !isResolved && (
-          <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-800/40 px-4 py-3">
-            <p className="text-xs text-zinc-500">No email generated yet</p>
-            <ActionButton variant="blue" onClick={handleGenerate} disabled={loading}>
-              ✦ Generate Email
-            </ActionButton>
-          </div>
-        )}
+        {/* Action Buttons */}
+        <div className="pt-2 flex flex-col gap-3">
+          {actionError && <p className="text-[11px] text-red-500 text-center font-medium">{actionError}</p>}
+          
+          <div className="flex flex-wrap gap-2">
+            {!hasEmail && !isResolved && (
+              <button 
+                onClick={handleGenerate}
+                disabled={loading}
+                className="w-full bg-zinc-100 hover:bg-white text-black py-2 rounded-md text-sm font-bold transition-all disabled:opacity-50"
+              >
+                {loading ? "Analyzing..." : "✨ Generate Match & Email"}
+              </button>
+            )}
 
-        {/* Email preview */}
-        {hasEmail && (
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950/60">
-            <div className="flex items-center gap-2 border-b border-zinc-800 px-4 py-2.5">
-              <span className="shrink-0 text-xs uppercase tracking-wider text-zinc-500">Subject</span>
-              <span className="truncate text-sm font-semibold text-zinc-100">{task.subject}</span>
-            </div>
-            <div className="px-4 py-3">
-              <p className="whitespace-pre-wrap font-mono text-sm leading-relaxed text-zinc-300">
-                {task.body}
-              </p>
-            </div>
-          </div>
-        )}
+            {hasEmail && task.status !== "COMPLETED" && task.status !== "REJECTED" && (
+              <>
+                <div className="space-y-2 w-full">
+                  <button
+                    onClick={handleOpenGmail}
+                    disabled={!task.subject || !task.body}
+                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2.5 rounded-md text-sm font-bold shadow-lg shadow-blue-900/20 transition-all"
+                  >
+                    Open in Gmail & Send
+                  </button>
+                  <p className="text-[10px] text-zinc-500 text-center">
+                    Opens Gmail with your email pre-filled. Review and click send.
+                  </p>
+                  {gmailOpened && (
+                    <p className="text-xs text-blue-400 text-center animate-pulse">
+                      Gmail opened — review and send your email
+                    </p>
+                  )}
+                </div>
 
-        {/* Action buttons */}
-        {hasEmail && !isResolved && (
-          <div className="flex flex-wrap items-center gap-2">
-            <ActionButton variant="green" onClick={handleApprove} disabled={loading}>✓ Approve</ActionButton>
-            <ActionButton variant="red"   onClick={handleReject}  disabled={loading}>✕ Reject</ActionButton>
-            <ActionButton variant="amber" onClick={handleGenerate} disabled={loading}>↺ Regenerate</ActionButton>
-          </div>
-        )}
-
-        {isResolved && (
-          <div className="flex items-center gap-1.5 text-xs text-zinc-600">
-            <span>
-              {task.status === "COMPLETED" && "✓ Task completed"}
-              {task.status === "REJECTED"  && "✕ Task rejected"}
-              {task.status === "STALE"     && "Task marked stale"}
-            </span>
-            {task.completedAt && (
-              <span>· {new Date(task.completedAt).toLocaleString()}</span>
+                <div className="flex gap-2 w-full mt-2">
+                   <ActionButton onClick={handleApprove} disabled={loading} variant="green">Mark as Sent</ActionButton>
+                   <ActionButton onClick={handleReject} disabled={loading} variant="red">Discard</ActionButton>
+                </div>
+              </>
             )}
           </div>
-        )}
+        </div>
 
-        {/* Hard error */}
-        {actionError && <p className="text-xs text-red-400">{actionError}</p>}
-
-        {/* Agent logs */}
+        {/* Logs */}
         <AgentLogs logs={task.logs} />
       </div>
     </div>

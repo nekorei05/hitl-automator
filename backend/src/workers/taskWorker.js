@@ -22,21 +22,17 @@ async function run(task) {
   }
 }
 
-
 async function handleEmail(task) {
   if (!task.recipient || !task.subject || !task.body) {
     throw new Error(`Task ${task._id} is missing email fields (recipient/subject/body).`);
   }
-  console.log(`[Worker] Sending email → ${task.recipient}`);
-  await mockSend(task);
+  console.log(`[Worker] Email prepared for ${task.recipient}. Backend send skipped (Sent via Frontend).`);
+  
 }
 
 async function handleInvoice(task) {
-  // draftInvoice.js is a placeholder for now — log and skip
   console.log(`[Worker] Invoice task ${task._id} — draftInvoice not yet implemented. Skipping send.`);
-  // When ready: await draftInvoice(task);
 }
-
 
 async function setStatus(task, status, extra = {}) {
   await Task.findByIdAndUpdate(task._id, { status, ...extra });

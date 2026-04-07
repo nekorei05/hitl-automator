@@ -3,6 +3,7 @@ const router = express.Router();
 const Task = require('../models/Task');
 const taskWorker = require('../workers/taskWorker');
 const { generateEmail } = require('../services/aiService');
+const { sendEmail } = require('../services/emailService');
 
 const TYPE_RULES = [
   { type: 'email', keywords: ['email', 'mail', 'send message', 'outreach', 'smtp'] },
@@ -75,13 +76,27 @@ router.post('/:id/approve', async (req, res) => {
 
     task.status = 'APPROVED';
     task.approvedAt = new Date();
-    await task.save();
+    
+    try {
+      if (task.type === 'email' && task.recipient && task.subject && task.body) {
+        await sendEmail({
+          to: task.recipient,
+          subject: task.subject,
+          text: task.body
+        });
+      }
 
-    taskWorker.run(task).catch((err) =>
-      console.error(`[Worker] Failed for task ${task._id}:`, err)
-    );
+      task.status = 'COMPLETED';
+      task.completedAt = new Date();
+      await task.save();
 
-    res.json(task);
+      res.json(task);
+    } catch (emailError) {
+      console.error('[POST /tasks/:id/approve] Email send failed:', emailError);
+      await task.save();
+      return res.status(500).json({ error: 'Failed to send email. Task marked as APPROVED.', details: emailError.message });
+    }
+
   } catch (err) {
     console.error('[POST /tasks/:id/approve]', err);
     res.status(500).json({ error: 'Internal Server Error' });
