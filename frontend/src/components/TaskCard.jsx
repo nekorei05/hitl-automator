@@ -1,76 +1,74 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import AgentLogs from "./AgentLogs";
 import { approveTask, rejectTask } from "../services/api";
 import axios from "axios";
 
-// status badge
+// ─── Status badge ─────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  CREATED:          { label: "Created",          classes: "bg-zinc-800 text-zinc-400 border-zinc-700" },
-  PENDING_APPROVAL: { label: "Pending",          classes: "bg-zinc-800 text-zinc-400 border-zinc-700" },
-  READY_FOR_REVIEW: { label: "Ready for Review", classes: "bg-yellow-950 text-yellow-400 border-yellow-800" },
-  APPROVED:         { label: "Approved",         classes: "bg-blue-950 text-blue-400 border-blue-800" },
-  COMPLETED:        { label: "Completed",        classes: "bg-emerald-950 text-emerald-400 border-emerald-800" },
-  REJECTED:         { label: "Rejected",         classes: "bg-red-950 text-red-400 border-red-900" },
-  REWRITING:        { label: "Rewriting",        classes: "bg-amber-950 text-amber-400 border-amber-800" },
-  STALE:            { label: "Stale",            classes: "bg-zinc-800 text-zinc-500 border-zinc-700" },
+  CREATED:          { label: "Created",          classes: "bg-zinc-800/80 text-zinc-400 border-zinc-700/60" },
+  PENDING_APPROVAL: { label: "Pending",          classes: "bg-zinc-800/80 text-zinc-400 border-zinc-700/60" },
+  READY_FOR_REVIEW: { label: "Ready for Review", classes: "bg-yellow-950/60 text-yellow-500 border-yellow-900/60" },
+  APPROVED:         { label: "Approved",         classes: "bg-blue-950/60 text-blue-400 border-blue-900/60" },
+  COMPLETED:        { label: "Completed",        classes: "bg-emerald-950/60 text-emerald-400 border-emerald-900/60" },
+  REJECTED:         { label: "Rejected",         classes: "bg-red-950/60 text-red-400 border-red-900/60" },
+  REWRITING:        { label: "Rewriting",        classes: "bg-amber-950/60 text-amber-400 border-amber-900/60" },
+  STALE:            { label: "Stale",            classes: "bg-zinc-800/80 text-zinc-500 border-zinc-700/60" },
 };
 
 function StatusBadge({ status }) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.CREATED;
   return (
-    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${config.classes}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium tracking-wide ${config.classes}`}>
       {config.label}
     </span>
   );
 }
 
-// match badge
+// ─── Match badge ──────────────────────────────────────────────────────────────
 const MATCH_BADGE = {
-  HIGH:   { label: "High Match",   classes: "bg-emerald-950 text-emerald-400 border-emerald-800" },
-  MEDIUM: { label: "Partial Match", classes: "bg-yellow-950 text-yellow-400 border-yellow-800" },
-  LOW:    { label: "Low Match",    classes: "bg-red-950 text-red-400 border-red-900" },
+  HIGH:   { label: "High Match",    classes: "bg-emerald-950/60 text-emerald-400 border-emerald-900/60" },
+  MEDIUM: { label: "Partial Match", classes: "bg-yellow-950/60 text-yellow-500 border-yellow-900/60" },
+  LOW:    { label: "Low Match",     classes: "bg-red-950/60 text-red-400 border-red-900/60" },
 };
 
 function MatchBadge({ level }) {
   const config = MATCH_BADGE[level?.toUpperCase()];
   if (!config) return null;
   return (
-    <span className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${config.classes}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium tracking-wide ${config.classes}`}>
       {config.label}
     </span>
   );
 }
 
+// ─── Match panel ──────────────────────────────────────────────────────────────
 const MATCH_CONFIG = {
   HIGH: {
-    icon: "✓",
-    label: "Strong Match",
-    summary: "Your skills align well with this role.",
-    chip: "bg-emerald-900/20 text-emerald-400 border-emerald-800/40",
-    wrap: "bg-transparent border-zinc-800/80",
-    heading: "text-emerald-400",
-    muted: "text-zinc-400",
-    divider: "border-zinc-800/60",
+    indicator: "bg-emerald-400",
+    label:     "Strong Match",
+    summary:   "Your skills align well with this role.",
+    heading:   "text-emerald-400",
+    chip:      "bg-zinc-800 text-emerald-400 border-zinc-700",
+    muted:     "text-zinc-400",
+    divider:   "border-zinc-800",
   },
   MEDIUM: {
-    icon: "⚡",
-    label: "Partial Match",
-    summary: "You meet some requirements, but gaps exist.",
-    chip: "bg-yellow-900/20 text-yellow-400 border-yellow-800/40",
-    wrap: "bg-transparent border-zinc-800/80",
-    heading: "text-yellow-400",
-    muted: "text-zinc-400",
-    divider: "border-zinc-800/60",
+    indicator: "bg-yellow-400",
+    label:     "Partial Match",
+    summary:   "You meet some requirements, but gaps exist.",
+    heading:   "text-yellow-500",
+    chip:      "bg-zinc-800 text-yellow-400 border-zinc-700",
+    muted:     "text-zinc-400",
+    divider:   "border-zinc-800",
   },
   LOW: {
-    icon: "⚠",
-    label: "Low Match",
-    summary: "This role is a weak fit based on your current skills.",
-    chip: "bg-red-900/20 text-red-400 border-red-800/40",
-    wrap: "bg-transparent border-zinc-800/80",
-    heading: "text-red-400",
-    muted: "text-zinc-400",
-    divider: "border-zinc-800/60",
+    indicator: "bg-red-400",
+    label:     "Low Match",
+    summary:   "This role is a weak fit based on your current skills.",
+    heading:   "text-red-400",
+    chip:      "bg-zinc-800 text-red-400 border-zinc-700",
+    muted:     "text-zinc-400",
+    divider:   "border-zinc-800",
   },
 };
 
@@ -81,88 +79,112 @@ function MatchPanel({ level, reason, suggestions }) {
   const suggestionList = Array.isArray(suggestions)
     ? suggestions.filter(Boolean)
     : typeof suggestions === "string" && suggestions.trim()
-    ? suggestions.split(/[,\n]/).map(s => s.trim()).filter(Boolean)
+    ? suggestions.split(/[\,\n]/).map((s) => s.trim()).filter(Boolean)
     : [];
 
   return (
-    <div className={`rounded-lg border overflow-hidden ${cfg.wrap}`}>
-
-      <div className="flex items-center gap-2.5 px-4 py-3">
-        <span className={`text-sm ${cfg.heading}`}>{cfg.icon}</span>
+    <div className="rounded-lg border border-zinc-800 overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-3 bg-zinc-800/30">
+        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.indicator}`} />
         <span className={`text-xs font-semibold uppercase tracking-wider ${cfg.heading}`}>
           {cfg.label}
         </span>
-        <span className="text-xs text-zinc-500">— {cfg.summary}</span>
+        <span className="text-xs text-zinc-500">{cfg.summary}</span>
       </div>
 
       {reason && (
-        <div className={`border-t px-4 py-2.5 ${cfg.divider}`}>
+        <div className={`border-t px-4 py-3 ${cfg.divider}`}>
+          <p className="text-xs text-zinc-500 uppercase tracking-wider mb-1.5 font-medium">
+            Analysis
+          </p>
           <p className={`text-xs leading-relaxed ${cfg.muted}`}>{reason}</p>
         </div>
       )}
 
       {(level?.toUpperCase() === "LOW" || level?.toUpperCase() === "MEDIUM") &&
         suggestionList.length > 0 && (
-        <div className={`border-t px-4 py-3 ${cfg.divider}`}>
-
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2.5">
-            To improve your chances
-          </p>
-
-          <div className="flex flex-col gap-2">
-            {suggestionList.map((s, i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-0.5 font-mono text-xs ${cfg.chip}`}>
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <p className="text-xs text-zinc-300 leading-relaxed">{s}</p>
-              </div>
-            ))}
+          <div className={`border-t px-4 py-3 ${cfg.divider}`}>
+            <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2.5 font-medium">
+              To improve your chances
+            </p>
+            <div className="flex flex-col gap-2">
+              {suggestionList.map((s, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className={`mt-0.5 shrink-0 rounded border px-1.5 py-0.5 font-mono text-[10px] ${cfg.chip}`}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <p className="text-xs text-zinc-300 leading-relaxed">{s}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {level?.toUpperCase() === "HIGH" && (
         <div className={`border-t px-4 py-2.5 ${cfg.divider}`}>
           <p className="text-xs text-zinc-500">
-            Your profile is a strong fit. Review the email and approve when ready.
+            Your profile is a strong fit. Review the email and send when ready.
           </p>
         </div>
       )}
-
     </div>
   );
 }
 
+// ─── Action button ────────────────────────────────────────────────────────────
 function ActionButton({ onClick, disabled, variant, children }) {
   const variants = {
-    green: "bg-emerald-900/60 text-emerald-400 border-emerald-800 hover:bg-emerald-800/60",
-    red:   "bg-red-900/60 text-red-400 border-red-900 hover:bg-red-800/60",
-    amber: "bg-amber-900/60 text-amber-400 border-amber-800 hover:bg-amber-800/60",
-    blue:  "bg-blue-900/60 text-blue-400 border-blue-800 hover:bg-blue-800/60",
+    green: "bg-zinc-800 text-emerald-400 border-zinc-700 hover:bg-zinc-700 hover:border-zinc-600",
+    red:   "bg-zinc-800 text-red-400 border-zinc-700 hover:bg-zinc-700 hover:border-zinc-600",
+    amber: "bg-zinc-800 text-amber-400 border-zinc-700 hover:bg-zinc-700 hover:border-zinc-600",
+    blue:  "bg-zinc-800 text-blue-400 border-zinc-700 hover:bg-zinc-700 hover:border-zinc-600",
   };
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-lg border px-4 py-1.5 text-xs font-medium transition-all duration-150 flex-1 sm:flex-none disabled:cursor-not-allowed disabled:opacity-40 ${variants[variant]}`}
-    >
+      className={`flex-1 rounded-lg border px-4 py-2 text-xs font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${variants[variant]}`}>
       {children}
     </button>
   );
 }
 
+// ─── Divider ──────────────────────────────────────────────────────────────────
+function SectionDivider() {
+  return <div className="border-t border-zinc-800/60" />;
+}
 
+// ─── Section label ────────────────────────────────────────────────────────────
+function SectionLabel({ children }) {
+  return (
+    <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+      {children}
+    </p>
+  );
+}
+
+// ─── Main TaskCard ────────────────────────────────────────────────────────────
 export default function TaskCard({ task, onUpdate }) {
   const [loading, setLoading]               = useState(false);
   const [actionError, setActionError]       = useState("");
   const [declineMessage, setDeclineMessage] = useState("");
   const [gmailOpened, setGmailOpened]       = useState(false);
+  const [isJobDescriptionOpen, setIsJobDescriptionOpen] = useState(false);
 
   const hasEmail   = !!(task.subject || task.body);
   const isResolved = ["COMPLETED", "REJECTED", "STALE"].includes(task.status);
-  const matchLevel = task.matchLevel?.toUpperCase(); 
+  const matchLevel = task.matchLevel?.toUpperCase();
 
+  const jobDescriptionTextStyle = isJobDescriptionOpen
+    ? {}
+    : {
+        display: "-webkit-box",
+        WebkitLineClamp: 2,
+        WebkitBoxOrient: "vertical",
+        overflow: "hidden",
+      };
+
+  // ── Handlers (logic unchanged) ────────────────────────────────────────────
   const handleGenerate = async () => {
     setLoading(true);
     setActionError("");
@@ -172,10 +194,8 @@ export default function TaskCard({ task, onUpdate }) {
         `${import.meta.env.VITE_API_URL}/prompt`,
         { jobDescription: task.jobDescription }
       );
-
       const generatedTask = res.data?.task || (res.data?._id ? res.data : null);
       const aiText        = res.data?.text || res.data?.message || res.data?.reason || "";
-
       if (generatedTask) {
         onUpdate(generatedTask);
       } else {
@@ -216,122 +236,168 @@ export default function TaskCard({ task, onUpdate }) {
       setLoading(false);
     }
   };
-    const handleOpenGmail = () => {
-    const to = task.recipient || "";
-    const subject = task.subject || "";
-    const body = task.body || "";
 
-    const url = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
+  const handleOpenGmail = () => {
+    const to      = task.recipient || "";
+    const subject = task.subject   || "";
+    const body    = task.body      || "";
+    const url     = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(url, "_blank");
     setGmailOpened(true);
     setTimeout(() => setGmailOpened(false), 4000);
   };
 
-
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl transition-all duration-300 hover:border-zinc-700">
-      <div className="p-6 space-y-6">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <StatusBadge status={task.status} />
-            <MatchBadge level={task.matchLevel} />
-          </div>
-          <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
-            ID: {task._id.slice(-6)}
-          </span>
+    <div className="w-full rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden transition-colors duration-200 hover:border-zinc-700">
+
+      {/* ── 1. Card header: badges + short ID ── */}
+      <div className="flex items-center justify-between px-5 pt-5 pb-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <StatusBadge status={task.status} />
+          <MatchBadge level={task.matchLevel} />
         </div>
+        <span className="text-[10px] font-mono text-zinc-700 tabular-nums">
+          {task._id?.slice(-8)}
+        </span>
+      </div>
 
-        {/* Job Description Section */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Job Description</h3>
-          <p className="text-sm text-zinc-300 leading-relaxed line-clamp-3 italic">
-            "{task.jobDescription}"
-          </p>
-        </div>
+      <SectionDivider />
 
-        {/* Match Panel (AI Analysis) */}
-        {task.matchLevel && (
-           <MatchPanel 
-             level={task.matchLevel} 
-             reason={task.matchReason} 
-             suggestions={task.matchSuggestions} 
-           />
-        )}
+      <div className="grid gap-8 px-5 pb-5 lg:grid-cols-[1.2fr_1.8fr]">
 
-        {/* Decline Message if AI says no */}
-        {declineMessage && (
-          <div className="bg-red-950/20 border border-red-900/50 rounded-lg p-4">
-             <p className="text-xs text-red-400 leading-relaxed">{declineMessage}</p>
-          </div>
-        )}
-
-        {/* Email Preview Section */}
-        {hasEmail && (
+        {/* ── Left column: Job description + match analysis ── */}
+        <div className="space-y-6">
           <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Draft Email</h3>
-            <div className="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
-              <div className="px-4 py-2 border-b border-zinc-800 bg-zinc-900/50 flex flex-col gap-1">
-                <p className="text-[11px] text-zinc-500"><span className="text-zinc-600">To:</span> {task.recipient}</p>
-                <p className="text-[11px] text-zinc-500 font-medium"><span className="text-zinc-600">Subject:</span> {task.subject}</p>
+            <div className="flex items-center justify-between gap-3">
+              <SectionLabel>Job Description</SectionLabel>
+              <button
+                type="button"
+                onClick={() => setIsJobDescriptionOpen((prev) => !prev)}
+                className="text-[11px] font-semibold leading-none text-zinc-400 hover:text-zinc-200 transition-colors duration-150"
+              >
+                {isJobDescriptionOpen ? "Collapse" : "Expand"}
+              </button>
+            </div>
+            <p
+              className="text-sm text-zinc-300 leading-relaxed"
+              style={jobDescriptionTextStyle}
+            >
+              {task.jobDescription}
+            </p>
+          </div>
+
+          {matchLevel && (
+            <div className="space-y-3">
+              <SectionDivider />
+              <MatchPanel
+                level={task.matchLevel}
+                reason={task.matchReason}
+                suggestions={task.matchSuggestions}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* ── Right column: Email preview + actions ── */}
+        <div className="flex flex-col gap-6">
+          <div className="rounded-xl border border-zinc-800 overflow-hidden bg-zinc-900 shadow-sm shadow-black/10 flex flex-col">
+            <div className="bg-zinc-800/50 border-b border-zinc-800 px-4 py-3 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <SectionLabel>Draft Email</SectionLabel>
+                <span className="text-[11px] text-zinc-500">
+                  {hasEmail ? "Preview" : "No draft available"}
+                </span>
               </div>
-              <div className="bg-white text-black px-4 py-6">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed font-sans">
-                  {task.body}
+              <div className="space-y-1">
+                <p className="text-[11px] text-zinc-500">
+                  <span className="text-zinc-600 mr-1.5">To</span>
+                  {task.recipient || <span className="italic text-zinc-700">No recipient</span>}
+                </p>
+                <p className="text-[11px] text-zinc-400 font-medium">
+                  <span className="text-zinc-600 mr-1.5 font-normal">Subject</span>
+                  {task.subject || <span className="italic text-zinc-700">No subject</span>}
                 </p>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Action Buttons */}
-        <div className="pt-2 flex flex-col gap-3">
-          {actionError && <p className="text-[11px] text-red-500 text-center font-medium">{actionError}</p>}
-          
-          <div className="flex flex-wrap gap-2">
+            <div className="max-h-[500px] overflow-y-auto bg-white px-5 py-5">
+              <p className="whitespace-pre-wrap text-[13px] text-zinc-800 leading-7 font-sans">
+                {hasEmail ? task.body : "Generate an email draft to preview the content here."}
+              </p>
+            </div>
+          </div>
+
+          {declineMessage && (
+            <div className="rounded-lg border border-zinc-800 bg-zinc-800/30 px-4 py-3">
+              <p className="text-xs text-zinc-400 leading-relaxed">{declineMessage}</p>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {actionError && (
+              <p className="text-[11px] text-red-400 text-center">{actionError}</p>
+            )}
+
             {!hasEmail && !isResolved && (
-              <button 
+              <button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="w-full bg-zinc-100 hover:bg-white text-black py-2 rounded-md text-sm font-bold transition-all disabled:opacity-50"
+                className="w-full rounded-lg bg-zinc-100 hover:bg-white text-zinc-900 py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-50"
               >
-                {loading ? "Analyzing..." : " Generate Match & Email"}
+                {loading ? "Analysing…" : "Generate Match & Draft Email"}
               </button>
             )}
 
             {hasEmail && task.status !== "COMPLETED" && task.status !== "REJECTED" && (
-              <>
-                <div className="space-y-2 w-full">
-                  <button
-                    onClick={handleOpenGmail}
-                    disabled={!task.subject || !task.body}
-                    className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white py-2.5 rounded-md text-sm font-bold shadow-lg shadow-blue-900/20 transition-all"
-                  >
-                    Open in Gmail & Send
-                  </button>
-                  <p className="text-[10px] text-zinc-500 text-center">
-                    Opens Gmail with your email pre-filled. Review and click send.
+              <div className="space-y-4">
+                <button
+                  onClick={handleOpenGmail}
+                  disabled={!task.subject || !task.body}
+                  className="w-full rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white py-2.5 text-sm font-semibold transition-all duration-150 shadow-md shadow-blue-950/40"
+                >
+                  Send Email via Gmail
+                </button>
+                <div className="flex gap-2">
+                  <ActionButton onClick={handleApprove} disabled={loading} variant="green">
+                    Mark as Completed
+                  </ActionButton>
+                  <ActionButton onClick={handleReject} disabled={loading} variant="red">
+                    Reject
+                  </ActionButton>
+                  <ActionButton onClick={handleGenerate} disabled={loading} variant="amber">
+                    Regenerate
+                  </ActionButton>
+                </div>
+                <p className="text-center text-[10px] text-zinc-600">
+                  Opens Gmail with your email pre-filled. Review and send.
+                </p>
+                {gmailOpened && (
+                  <p className="text-center text-[11px] text-blue-400 transition-opacity duration-300">
+                    Gmail opened — review and send your email
                   </p>
-                  {gmailOpened && (
-                    <p className="text-xs text-blue-400 text-center animate-pulse">
-                      Gmail opened — review and send your email
-                    </p>
-                  )}
-                </div>
+                )}
+              </div>
+            )}
 
-                <div className="flex gap-2 w-full mt-2">
-                   <ActionButton onClick={handleApprove} disabled={loading} variant="green">Mark as Sent</ActionButton>
-                   <ActionButton onClick={handleReject} disabled={loading} variant="red">Discard</ActionButton>
-                </div>
-              </>
+            {isResolved && (
+              <p className="text-center text-xs text-zinc-600">
+                {task.status === "COMPLETED" && "Marked as completed"}
+                {task.status === "REJECTED"  && "Task rejected"}
+                {task.status === "STALE"     && "Task is stale"}
+                {task.completedAt && (
+                  <span className="ml-1.5 text-zinc-700">
+                    · {new Date(task.completedAt).toLocaleString()}
+                  </span>
+                )}
+              </p>
             )}
           </div>
         </div>
+      </div>
 
-        {/* Logs */}
+      {/* ── 7. Agent logs ── */}
+      <div className="px-5 pb-5">
         <AgentLogs logs={task.logs} />
       </div>
     </div>
