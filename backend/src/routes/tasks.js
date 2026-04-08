@@ -94,8 +94,7 @@ router.post('/:id/approve', async (req, res) => {
 //  POST /api/tasks/:id/reject 
 router.post('/:id/reject', async (req, res) => {
   try {
-    const { reason } = req.body;
-
+const { reason } = req.body || {};
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
 

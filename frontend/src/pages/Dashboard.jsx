@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [tasks, setTasks]     = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter]   = useState("All");
+  const [isDark, setIsDark]   = useState(true);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -52,39 +53,47 @@ export default function Dashboard() {
     : tasks.filter((t) => t.status === filter);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className={`min-h-screen text-zinc-100 ${isDark ? 'dark bg-zinc-950' : 'bg-white'}`}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
+      <header className={`sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md ${isDark ? 'dark:bg-zinc-950/80 dark:border-zinc-800' : 'bg-white/80 border-gray-300'}`}>
+        <div className="w-full flex items-center justify-between px-6 lg:px-10 py-4">
           <div>
-            <h1 className="text-base font-semibold tracking-tight text-zinc-100">
+            <h1 className="text-base font-semibold tracking-tight text-zinc-100 dark:text-zinc-100 text-gray-900">
               Agentic HITL
             </h1>
-            <p className="text-xs text-zinc-500">AI Task Orchestrator</p>
+            <p className="text-xs text-zinc-500 dark:text-zinc-500 text-gray-600">AI Task Orchestrator</p>
           </div>
 
           {/* Stats pills */}
           <div className="flex items-center gap-2 text-xs">
-            <span className="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-zinc-400">
+            <span className="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 border-gray-300 bg-gray-100 text-gray-600">
               {counts.all} total
             </span>
             {counts.review > 0 && (
-              <span className="rounded-full border border-yellow-800 bg-yellow-950 px-3 py-1 text-yellow-400">
+              <span className="rounded-full border border-yellow-800 bg-yellow-950 px-3 py-1 text-yellow-400 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-400 border-yellow-300 bg-yellow-50 text-yellow-600">
                 {counts.review} to review
               </span>
             )}
             {counts.done > 0 && (
-              <span className="rounded-full border border-emerald-800 bg-emerald-950 px-3 py-1 text-emerald-400">
+              <span className="rounded-full border border-emerald-800 bg-emerald-950 px-3 py-1 text-emerald-400 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400 border-emerald-300 bg-emerald-50 text-emerald-600">
                 {counts.done} done
               </span>
             )}
           </div>
+
+          {/* Theme toggle */}
+          <button
+            onClick={() => setIsDark(!isDark)}
+            className="text-xs text-zinc-400 hover:text-zinc-200 dark:text-zinc-400 dark:hover:text-zinc-200 text-gray-600 hover:text-gray-800"
+          >
+            {isDark ? 'Light' : 'Dark'}
+          </button>
         </div>
       </header>
 
       {/* ── Main content ───────────────────────────────────────────────────── */}
-      <main className="mx-auto max-w-3xl px-5 py-8">
+      <main className="w-full px-6 lg:px-10 py-8">
 
         {/* Task creation form */}
         <TaskForm onTaskCreated={handleTaskCreated} />
@@ -97,8 +106,8 @@ export default function Dashboard() {
               onClick={() => setFilter(f)}
               className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
                 filter === f
-                  ? "bg-zinc-800 text-zinc-100"
-                  : "text-zinc-500 hover:text-zinc-300"
+                  ? "bg-zinc-800 text-zinc-100 dark:bg-zinc-800 dark:text-zinc-100 bg-blue-600 text-white"
+                  : "text-zinc-500 hover:text-zinc-300 dark:text-zinc-500 dark:hover:text-zinc-300 text-gray-600 hover:text-gray-800"
               }`}
             >
               {f === "All" ? `All (${counts.all})` : f.replace(/_/g, " ")}
@@ -107,18 +116,18 @@ export default function Dashboard() {
         </div>
 
         {/* Divider */}
-        <div className="mt-4 border-t border-zinc-800" />
+        <div className="mt-4 border-t border-zinc-800 dark:border-zinc-800 border-gray-300" />
 
         {/* Task list */}
         <div className="mt-5">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-zinc-600">
-              <div className="mb-3 h-4 w-4 animate-spin rounded-full border-2 border-zinc-700 border-t-zinc-400" />
+            <div className="flex flex-col items-center justify-center py-20 text-zinc-600 dark:text-zinc-600 text-gray-500">
+              <div className="mb-3 h-4 w-4 animate-spin rounded-full border-2 border-zinc-700 border-t-zinc-400 dark:border-zinc-700 dark:border-t-zinc-400 border-gray-300 border-t-blue-600" />
               <p className="text-xs">Loading tasks…</p>
             </div>
           ) : filtered.length === 0 ? (
             <div className="py-20 text-center">
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-zinc-600 dark:text-zinc-600 text-gray-500">
                 {filter === "All"
                   ? "No tasks yet. Create one above."
                   : `No tasks with status "${filter.replace(/_/g, " ")}".`}

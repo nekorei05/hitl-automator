@@ -224,18 +224,24 @@ export default function TaskCard({ task, onUpdate }) {
     }
   };
 
-  const handleReject = async () => {
-    setLoading(true);
-    setActionError("");
-    try {
-      const res = await rejectTask(task._id);
-      onUpdate(res.data);
-    } catch {
-      setActionError("Reject failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
+const handleReject = async () => {
+  const userReason = window.prompt("Enter rejection reason:");
+  
+  if (userReason === null) return; 
+
+  setLoading(true);
+  setActionError("");
+  
+  try {
+    const res = await rejectTask(task._id, userReason || "No reason provided");
+    onUpdate(res.data);
+  } catch (err) {
+    setActionError("Reject failed. Please try again.");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleOpenGmail = () => {
     const to      = task.recipient || "";
@@ -249,7 +255,7 @@ export default function TaskCard({ task, onUpdate }) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="w-full rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden transition-colors duration-200 hover:border-zinc-700">
+    <div className="w-full px-6 lg:px-10 rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden transition-colors duration-200 hover:border-zinc-700">
 
       {/* ── 1. Card header: badges + short ID ── */}
       <div className="flex items-center justify-between px-5 pt-5 pb-4">
@@ -264,11 +270,11 @@ export default function TaskCard({ task, onUpdate }) {
 
       <SectionDivider />
 
-      <div className="grid gap-8 px-5 pb-5 lg:grid-cols-[1.2fr_1.8fr]">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-8 w-full">
 
         {/* ── Left column: Job description + match analysis ── */}
-        <div className="space-y-6">
-          <div className="space-y-3">
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3 flex-1">
             <div className="flex items-center justify-between gap-3">
               <SectionLabel>Job Description</SectionLabel>
               <button
@@ -279,12 +285,11 @@ export default function TaskCard({ task, onUpdate }) {
                 {isJobDescriptionOpen ? "Collapse" : "Expand"}
               </button>
             </div>
-            <p
-              className="text-sm text-zinc-300 leading-relaxed"
-              style={jobDescriptionTextStyle}
-            >
-              {task.jobDescription}
-            </p>
+            <div className="text-sm text-zinc-300 leading-relaxed" style={isJobDescriptionOpen ? {maxHeight: '300px', overflowY: 'auto'} : {}}>
+              <p style={jobDescriptionTextStyle}>
+                {task.jobDescription}
+              </p>
+            </div>
           </div>
 
           {matchLevel && (
@@ -301,7 +306,7 @@ export default function TaskCard({ task, onUpdate }) {
 
         {/* ── Right column: Email preview + actions ── */}
         <div className="flex flex-col gap-6">
-          <div className="rounded-xl border border-zinc-800 overflow-hidden bg-zinc-900 shadow-sm shadow-black/10 flex flex-col">
+          <div className="rounded-xl border border-zinc-800 overflow-hidden bg-zinc-900 shadow-sm shadow-black/10 flex flex-col flex-1">
             <div className="bg-zinc-800/50 border-b border-zinc-800 px-4 py-3 space-y-2">
               <div className="flex items-center justify-between gap-3">
                 <SectionLabel>Draft Email</SectionLabel>
@@ -321,7 +326,7 @@ export default function TaskCard({ task, onUpdate }) {
               </div>
             </div>
 
-            <div className="max-h-[500px] overflow-y-auto bg-white px-5 py-5">
+            <div className="flex-1 overflow-y-auto bg-white px-5 py-5">
               <p className="whitespace-pre-wrap text-[13px] text-zinc-800 leading-7 font-sans">
                 {hasEmail ? task.body : "Generate an email draft to preview the content here."}
               </p>
