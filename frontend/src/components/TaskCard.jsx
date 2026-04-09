@@ -114,6 +114,7 @@ export default function TaskCard({ task, onUpdate }) {
   }, [task.body]);
 
   const handleGenerate = async () => {
+    console.log("Generating for ID:", task._id)
     setLoading(true);
     try {
       const res = await generateDraft(task._id);

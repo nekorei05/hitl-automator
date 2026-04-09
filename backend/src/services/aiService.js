@@ -9,8 +9,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
  */
 async function generateEmail(jobDescription) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const prompt = `Write a professional cold email applying for a job based on the following description:
 ${jobDescription}
 
@@ -38,9 +37,7 @@ Keep it concise and natural. Under 150-200 words.`;
  */
 async function generateMatchAnalysis(jobDescription) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-    const prompt = `Analyze how well a software developer's profile matches this job description. Assume the developer has skills in React, Node.js, Python, and basic UI/UX.
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });    const prompt = `Analyze how well a software developer's profile matches this job description. Assume the developer has skills in React, Node.js, Python, and basic UI/UX.
 
 Job Description:
 ${jobDescription}

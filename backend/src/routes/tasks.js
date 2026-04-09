@@ -129,9 +129,16 @@ router.post('/:id/generate-draft', async (req, res) => {
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
     }
-    if (task.status !== 'CREATED') {
-      return res.status(400).json({ error: 'Task must be in CREATED status to generate draft' });
-    }
+// Replace your IF statement with this inclusive one:
+const allowedStatuses = ['CREATED', 'PENDING_APPROVAL', 'READY_FOR_REVIEW'];
+
+if (!allowedStatuses.includes(task.status)) {
+  return res.status(400).json({ 
+    error: `Status ${task.status} not allowed. Must be one of: ${allowedStatuses.join(', ')}` 
+  });
+}
+
+
     try {
       const emailText = await generateEmail(task.jobDescription);
       const lines = emailText.trim().split('\n');
