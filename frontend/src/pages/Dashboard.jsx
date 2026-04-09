@@ -2,15 +2,41 @@ import { useState, useEffect, useCallback } from "react";
 import TaskForm from "../components/TaskForm";
 import TaskCard from "../components/TaskCard";
 import { getTasks } from "../services/api";
+import { Plus, LayoutDashboard } from "lucide-react";
 
-// ─── Status filter tabs ───────────────────────────────────────────────────────
-const FILTERS = ["All", "CREATED", "READY_FOR_REVIEW", "COMPLETED", "REJECTED"];
+const FILTERS = ["All", "CREATED", "PROCESSING", "READY_FOR_REVIEW", "COMPLETED", "REJECTED"];
+
+function StatusBadge({ status }) {
+  const config = {
+    CREATED: { label: "Created", color: "blue" },
+    PROCESSING: { label: "Processing", color: "blue" },
+    READY_FOR_REVIEW: { label: "Ready for Review", color: "yellow" },
+    COMPLETED: { label: "Completed", color: "green" },
+    REJECTED: { label: "Rejected", color: "red" }
+  };
+  
+  const c = config[status] || { label: status, color: "gray" };
+
+  const colors = {
+    blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    yellow: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    green: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    red: "bg-red-500/10 text-red-400 border-red-500/20",
+    gray: "bg-zinc-800 text-zinc-400 border-zinc-700",
+  };
+
+  return (
+    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${colors[c.color]}`}>
+      {c.label}
+    </span>
+  );
+}
 
 export default function Dashboard() {
-  const [tasks, setTasks]     = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter]   = useState("All");
-  const [isDark, setIsDark]   = useState(true);
+  const [filter, setFilter] = useState("All");
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -25,129 +51,129 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchTasks();
-    const interval = setInterval(fetchTasks, 6000); // poll every 6s
+    const interval = setInterval(fetchTasks, 6000); 
     return () => clearInterval(interval);
   }, [fetchTasks]);
 
-  // Add new task to top of list
   const handleTaskCreated = (task) => {
     setTasks((prev) => [task, ...prev]);
+    setSelectedTaskId(task._id); 
   };
 
-  // Replace an existing task in-place (after approve/reject/generate)
   const handleTaskUpdated = (updated) => {
     setTasks((prev) =>
       prev.map((t) => (t._id === updated._id ? updated : t))
     );
   };
 
-  // Derived counts
   const counts = {
-    all:    tasks.length,
+    all: tasks.length,
     review: tasks.filter((t) => t.status === "READY_FOR_REVIEW").length,
-    done:   tasks.filter((t) => t.status === "COMPLETED").length,
+    done: tasks.filter((t) => t.status === "COMPLETED").length,
   };
 
   const filtered = filter === "All"
     ? tasks
     : tasks.filter((t) => t.status === filter);
 
+  const selectedTask = tasks.find(t => t._id === selectedTaskId);
+
   return (
-    <div className={`min-h-screen w-full ${isDark ? "dark bg-[#0B0F14] text-gray-100" : "bg-gray-50 text-gray-900"}`}>
-
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <header className={`sticky top-0 z-10 border-b backdrop-blur-md ${isDark ? "bg-[#0B0F14]/80 border-[#1F2937]" : "bg-white/80 border-gray-200"}`}>
-        <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-10 flex items-center justify-between py-3">
-          <div>
-            <h1 className="text-base font-semibold tracking-tight text-gray-100 dark:text-gray-100 text-gray-900">
-              Agentic HITL
-            </h1>
-            <p className="text-xs text-gray-400 dark:text-gray-400 text-gray-600">AI Task Orchestrator</p>
+    <div className="flex h-screen w-full bg-zinc-950 text-zinc-100 overflow-hidden font-sans">
+      
+      {/* ── Left Sidebar ── */}
+      <aside className="w-[340px] flex-shrink-0 border-r border-zinc-800/50 bg-[#09090b] flex flex-col h-full z-10">
+        
+        {/* Header */}
+        <div className="p-5 border-b border-zinc-800/50">
+          <div className="flex items-center gap-2 mb-4">
+            <LayoutDashboard className="w-5 h-5 text-indigo-500" />
+            <div>
+              <h1 className="text-sm font-semibold tracking-tight text-zinc-100">Agentic HITL</h1>
+              <p className="text-[11px] text-zinc-500 leading-none mt-1">AI Task Orchestrator</p>
+            </div>
           </div>
-
-          {/* Stats pills */}
-          <div className="flex items-center gap-2 text-xs">
-            <span className={`rounded-full border px-3 py-1 ${isDark ? "border-[#1F2937] bg-[#111827] text-gray-300" : "border-gray-200 bg-gray-50 text-gray-600"}`}>
-              {counts.all} total
-            </span>
-            {counts.review > 0 && (
-              <span className={`rounded-full border px-3 py-1 ${isDark ? "border-yellow-900/60 bg-yellow-950/40 text-yellow-300" : "border-yellow-200 bg-yellow-50 text-yellow-700"}`}>
-                {counts.review} to review
-              </span>
-            )}
-            {counts.done > 0 && (
-              <span className={`rounded-full border px-3 py-1 ${isDark ? "border-emerald-900/60 bg-emerald-950/40 text-emerald-300" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}>
-                {counts.done} done
-              </span>
-            )}
-          </div>
-
-          {/* Theme toggle */}
+          
           <button
-            onClick={() => setIsDark(!isDark)}
-            className="text-xs font-semibold text-gray-400 hover:text-gray-200 dark:text-gray-400 dark:hover:text-gray-200 text-gray-600 hover:text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/40 focus:border-[#7C3AED]"
+            onClick={() => setSelectedTaskId(null)}
+            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2.5 rounded-lg transition-colors shadow-lg shadow-indigo-900/20"
           >
-            {isDark ? 'Light' : 'Dark'}
+            <Plus className="w-4 h-4" />
+            New Task
           </button>
         </div>
-      </header>
 
-      {/* ── Main content ───────────────────────────────────────────────────── */}
-      <main className="w-full py-8">
-        <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-10">
-
-        {/* Task creation form */}
-        <TaskForm onTaskCreated={handleTaskCreated} />
-
-        {/* Filter tabs */}
-        <div className="mt-8 flex items-center gap-1 overflow-x-auto pb-1">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/40 focus:border-[#7C3AED] ${
-                filter === f
-                  ? "bg-gradient-to-r from-[#7C3AED] to-[#6366F1] text-white shadow-sm"
-                  : `${isDark ? "text-gray-400 hover:text-gray-200 bg-transparent hover:bg-[#111827]" : "text-gray-600 hover:text-gray-900 bg-transparent hover:bg-gray-100"}`
-              }`}
-            >
-              {f === "All" ? `All (${counts.all})` : f.replace(/_/g, " ")}
-            </button>
-          ))}
+        {/* Filters */}
+        <div className="px-3 pt-3 pb-2 border-b border-zinc-800/50">
+          <div className="flex overflow-x-auto no-scrollbar gap-1 pb-1">
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`shrink-0 rounded-md px-2.5 py-1.5 text-[11px] font-semibold transition-all ${
+                  filter === f
+                    ? "bg-zinc-800 text-zinc-100"
+                    : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50"
+                }`}
+              >
+                {f === "All" ? `All (${counts.all})` : f.replace(/_/g, " ")}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Divider */}
-        <div className={`mt-4 border-t ${isDark ? "border-[#1F2937]" : "border-gray-200"}`} />
-
-        {/* Task list */}
-        <div className="mt-5">
+        {/* Task List */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-zinc-800 hover:scrollbar-thumb-zinc-700">
           {loading ? (
-            <div className={`flex flex-col items-center justify-center py-20 ${isDark ? "text-gray-500" : "text-gray-500"}`}>
-              <div className={`mb-3 h-4 w-4 animate-spin rounded-full border-2 ${isDark ? "border-[#1F2937] border-t-gray-300" : "border-gray-200 border-t-[#7C3AED]"}`} />
-              <p className="text-xs">Loading tasks…</p>
+            <div className="py-10 text-center flex flex-col items-center">
+              <div className="w-4 h-4 border-2 border-zinc-700 border-t-indigo-500 rounded-full animate-spin mb-2" />
+              <p className="text-xs text-zinc-500">Loading tasks...</p>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-20 text-center">
-              <p className="text-sm text-gray-500 dark:text-gray-500 text-gray-500">
-                {filter === "All"
-                  ? "No tasks yet. Create one above."
-                  : `No tasks with status "${filter.replace(/_/g, " ")}".`}
-              </p>
-            </div>
+            <p className="py-10 text-xs text-center text-zinc-600">No tasks found.</p>
           ) : (
-            <div className="flex flex-col gap-3">
-              {filtered.map((task) => (
-                <TaskCard
+            filtered.map((task) => {
+              const isSelected = selectedTaskId === task._id;
+              // Extract snippet
+              const snippet = task.jobDescription?.substring(0, 60) || "No description provided...";
+              
+              return (
+                <button
                   key={task._id}
-                  task={task}
-                  onUpdate={handleTaskUpdated}
-                />
-              ))}
-            </div>
+                  onClick={() => setSelectedTaskId(task._id)}
+                  className={`w-full text-left p-3 rounded-lg border transition-all duration-200 ${
+                    isSelected 
+                      ? "bg-zinc-800/80 border-indigo-500/30 shadow-sm shadow-indigo-900/10" 
+                      : "bg-transparent border-transparent hover:bg-zinc-800/40"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <StatusBadge status={task.status} />
+                    <span className="text-[10px] text-zinc-500 font-mono">
+                      {task._id.slice(-6)}
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-zinc-300 line-clamp-2 leading-relaxed">
+                    {snippet}
+                  </p>
+                </button>
+              );
+            })
           )}
         </div>
+      </aside>
+
+      {/* ── Main Content Area ── */}
+      <main className="flex-1 h-full overflow-y-auto bg-[#040405] scrollbar-thin scrollbar-thumb-zinc-800">
+        <div className="max-w-[1200px] mx-auto px-8 py-10 min-h-full flex flex-col">
+          {!selectedTaskId || !selectedTask ? (
+            <TaskForm onTaskCreated={handleTaskCreated} />
+          ) : (
+            <TaskCard task={selectedTask} onUpdate={handleTaskUpdated} />
+          )}
         </div>
       </main>
+
     </div>
   );
 }

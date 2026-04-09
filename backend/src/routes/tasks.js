@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Task = require('../models/Task');
 const taskWorker = require('../workers/taskWorker');
-const { generateEmail } = require('../services/aiService');
+const { generateEmail, generateMatchAnalysis } = require('../services/aiService');
 const { sendEmail } = require('../services/emailService');
 
 const TYPE_RULES = [
@@ -40,22 +40,35 @@ router.post('/', async (req, res) => {
     const trimmed = input.trim();
     const type = inferType(trimmed);
 
-    let preview = undefined;
-    if (type === 'email') {
-      try {
-        preview = await generateEmail(trimmed);
-      } catch (aiError) {
-        console.error('[POST /tasks] AI preview generation failed:', aiError);
-        preview = 'AI email generation failed. Please draft manually.';
-      }
+    // Generate match analysis
+    let matchAnalysis = null;
+    try {
+      matchAnalysis = await generateMatchAnalysis(trimmed);
+    } catch (aiError) {
+      console.error('[POST /tasks] AI match analysis failed:', aiError);
+      matchAnalysis = {
+        level: 'MEDIUM',
+        score: 50,
+        reason: 'Unable to analyze match at this time',
+        missing: ['Analysis unavailable'],
+        strength: ['Basic skills'],
+        insight: 'Please review manually',
+        suggestions: ['Review job requirements manually']
+      };
     }
 
     const task = await Task.create({
       jobDescription: trimmed,
       type,
-      status: 'PENDING_APPROVAL',
+      status: 'CREATED',
       originalPrompt: trimmed,
-      preview,
+      matchLevel: matchAnalysis.level,
+      matchScore: matchAnalysis.score,
+      matchReason: matchAnalysis.reason,
+      missingSkills: matchAnalysis.missing,
+      strengthSkills: matchAnalysis.strength,
+      matchInsight: matchAnalysis.insight,
+      suggestions: matchAnalysis.suggestions,
     });
 
     res.status(201).json(task);
@@ -105,6 +118,40 @@ const { reason } = req.body || {};
     res.json(task);
   } catch (err) {
     console.error('[POST /tasks/:id/reject]', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// POST /api/tasks/:id/generate-draft
+router.post('/:id/generate-draft', async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    if (task.status !== 'CREATED') {
+      return res.status(400).json({ error: 'Task must be in CREATED status to generate draft' });
+    }
+    try {
+      const emailText = await generateEmail(task.jobDescription);
+      const lines = emailText.trim().split('\n');
+      const subject = lines[0].replace(/^Subject:\s*/i, '').trim();
+      const body = lines.slice(1).join('\n').trim();
+      task.subject = subject;
+      task.body = body;
+      task.status = 'READY_FOR_REVIEW';
+      await task.save();
+      res.json(task);
+    } catch (aiError) {
+      console.error('[POST /tasks/:id/generate-draft] AI generation failed:', aiError);
+      task.subject = 'Draft Email';
+      task.body = 'AI email generation failed. Please draft manually.';
+      task.status = 'READY_FOR_REVIEW';
+      await task.save();
+      res.json(task);
+    }
+  } catch (err) {
+    console.error('[POST /tasks/:id/generate-draft]', err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });

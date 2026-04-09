@@ -12,8 +12,8 @@ const TaskSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'COMPLETED', 'REWRITING', 'STALE'],
-    default: 'PENDING_APPROVAL'
+    enum: ['CREATED', 'PROCESSING', 'READY_FOR_REVIEW', 'APPROVED', 'REJECTED', 'COMPLETED', 'REWRITING', 'STALE'],
+    default: 'CREATED'
   },
 
   // Email fields
@@ -28,7 +28,11 @@ const TaskSchema = new mongoose.Schema({
 
   // AI match analysis 
   matchLevel:   { type: String, enum: ['HIGH', 'MEDIUM', 'LOW'], default: null },
+  matchScore:   { type: Number, default: null },
   matchReason:  { type: String, default: null },
+  missingSkills: { type: [String], default: [] },
+  strengthSkills: { type: [String], default: [] },
+  matchInsight: { type: String, default: null },
   suggestions:  { type: [String], default: [] },
 
   // AI context
