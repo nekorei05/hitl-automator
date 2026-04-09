@@ -57,7 +57,7 @@ export default function Dashboard() {
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className={`sticky top-0 z-10 border-b backdrop-blur-md ${isDark ? "bg-[#0B0F14]/80 border-[#1F2937]" : "bg-white/80 border-gray-200"}`}>
-        <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-10 flex items-center justify-between py-3">
+        <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-10 flex items-center justify-between py-3">
           <div>
             <h1 className="text-base font-semibold tracking-tight text-gray-100 dark:text-gray-100 text-gray-900">
               Agentic HITL
@@ -94,7 +94,7 @@ export default function Dashboard() {
 
       {/* ── Main content ───────────────────────────────────────────────────── */}
       <main className="w-full py-8">
-        <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-10">
+        <div className="w-full max-w-[1600px] mx-auto px-6 lg:px-10">
 
         {/* Task creation form */}
         <TaskForm onTaskCreated={handleTaskCreated} />
