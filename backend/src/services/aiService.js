@@ -63,7 +63,7 @@ Example:
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    // Parse JSON
+
     let analysis;
     try {
       analysis = JSON.parse(text.replace(/```json\n?|\n?```/g, ''));
@@ -81,7 +81,6 @@ Example:
     return analysis;
   } catch (error) {
     console.error('[AI Service Error] generateMatchAnalysis failed:', error);
-    // Default fallback
     return {
       level: 'MEDIUM',
       score: 50,

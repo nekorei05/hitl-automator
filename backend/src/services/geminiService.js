@@ -91,10 +91,8 @@ const tools = [
   },
 ];
 
-// ─── Model ────────────────────────────────────────────────────────────────────
-// Using gemini-2.0-flash for stability.
-// gemini-2.5-flash is more capable but frequently returns 503 under high demand.
-// Switch back once availability improves.
+// Models 
+
 const model = genAI.getGenerativeModel({
   model: "gemini-2.0-flash",
   systemInstruction,

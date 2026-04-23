@@ -154,13 +154,23 @@ router.post('/:id/generate-draft', async (req, res) => {
     const userId = req.user?.id || null;
     const profile = await aiCore.getUserProfile(userId);
 
+    // Build the analysis object from stored task fields
+    const matchAnalysis = {
+      level:   task.matchLevel,
+      score:   task.matchScore,
+      reason:  task.matchReason,
+      missing: task.missingSkills,
+      strength: task.strengthSkills,
+      insight: task.matchInsight,
+    };
+
     const emailText = await aiCore.generateEmail(
       task.jobDescription,
       profile,
-      task.matchReason 
+      matchAnalysis
     );
 
-    task.email = emailText;
+    task.body = emailText;   // 'email' field doesn't exist in schema — use 'body'
     task.status = "READY_FOR_REVIEW";
 
     await task.save();
