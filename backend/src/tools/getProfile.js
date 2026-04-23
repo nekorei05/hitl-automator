@@ -1,8 +1,9 @@
 const Profile = require('../models/Profile');
 
-async function getProfile() {
+async function getProfile(userId = null) {
   try {
-    const profile = await Profile.findOne();
+    const query = userId ? { userId } : {};
+    const profile = await Profile.findOne(query);
     return profile ? profile.toJSON() : null;
   } catch (error) {
     console.error('Error fetching profile:', error);

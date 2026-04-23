@@ -1,18 +1,36 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const getProfile = require('../tools/getProfile');
-const stageEmail = require('../tools/stageEmail');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const getProfile  = require("../tools/getProfile");
+const stageEmail  = require("../tools/stageEmail");
+
+if (!process.env.GEMINI_API_KEY) {
+  throw new Error("GEMINI_API_KEY is not set in .env");
+}
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+async function withRetry(fn, retries = 3, delayMs = 5000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const isTransient = err.status === 503 || err.status === 429;
+      if (isTransient && i < retries - 1) {
+        console.log(`[Gemini] Overloaded (${err.status}), retrying in ${delayMs}ms… (${i + 1}/${retries})`);
+        await new Promise((res) => setTimeout(res, delayMs));
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
+// System prompt
 const systemInstruction = `
 You are an AI assistant that writes cold emails for job applications.
 
 Your goal is to write emails that feel human, confident and tailored — NOT generic.
 
--------------------------
-
 WORKFLOW:
-
 1. Call the tool get_my_profile
 2. Analyze job description vs profile
 3. Determine match level: HIGH / MEDIUM / LOW
@@ -20,20 +38,9 @@ WORKFLOW:
 5. Generate 2–3 improvement suggestions based on missing skills
 6. Call the tool stage_outreach
 
--------------------------
-
 WRITING RULES:
-
-- DO NOT use phrases like:
-  "I am writing to express my interest"
-  "I am eager to apply"
-  "I would like to apply"
-
-- Start naturally:
-  "I came across your opening..."
-  "I've been working on..."
-  "This role caught my attention..."
-
+- DO NOT use phrases like "I am writing to express my interest", "I am eager to apply", "I would like to apply"
+- Start naturally: "I came across your opening...", "I've been working on...", "This role caught my attention..."
 - Mention 2–3 relevant skills from job description
 - Mention real projects (MEWse, Quiz App)
 - Keep it short (120–160 words)
@@ -41,40 +48,19 @@ WRITING RULES:
 TONE:
 - HIGH → confident
 - MEDIUM → balanced
-- LOW → honest, acknowledge gap clearly, show intent to learn (not confident tone)
--------------------------
+- LOW → honest, acknowledge gap clearly, show intent to learn
 
 IMPORTANT RULES:
-
-- NEVER refuse to generate email
+- NEVER refuse to generate an email
 - DO NOT fabricate skills
 - ALWAYS call get_my_profile first
-- ALWAYS call stage_outreach after generating email
-
--------------------------
+- ALWAYS call stage_outreach after generating the email
 
 SUGGESTIONS:
-
-Also generate 2–3 improvement suggestions:
-- Identify missing skills
-- Be actionable
-- Be relevant to the job
-
--------------------------
+Generate 2–3 actionable improvement suggestions identifying missing skills relevant to the job.
 
 OUTPUT:
-
-Call stage_outreach with:
-
-{
-  jobDescription,
-  recipient,
-  subject,
-  body,
-  matchLevel,
-  matchReason,
-  suggestions
-}
+Call stage_outreach with: { jobDescription, recipient, subject, body, matchLevel, matchReason, suggestions }
 `;
 
 const tools = [
@@ -82,46 +68,48 @@ const tools = [
     functionDeclarations: [
       {
         name: "get_my_profile",
-        description: "Fetch the user's profile details including skills and projects."
+        description: "Fetch the user's profile details including skills and projects.",
       },
       {
         name: "stage_outreach",
-        description: "Stage the generated outreach email as a task.",
+        description: "Stage the generated outreach email as a task for human review.",
         parameters: {
           type: "OBJECT",
           properties: {
             jobDescription: { type: "STRING" },
-            recipient: { type: "STRING" },
-            subject: { type: "STRING" },
-            body: { type: "STRING" },
-            matchLevel: { type: "STRING" },
-            matchReason: { type: "STRING" },
-            suggestions: {
-              type: "ARRAY",
-              items: { type: "STRING" }
-            }
+            recipient:      { type: "STRING" },
+            subject:        { type: "STRING" },
+            body:           { type: "STRING" },
+            matchLevel:     { type: "STRING" },
+            matchReason:    { type: "STRING" },
+            suggestions:    { type: "ARRAY", items: { type: "STRING" } },
           },
-          required: ["jobDescription", "recipient", "subject", "body"]
-        }
-      }
-    ]
-  }
+          required: ["jobDescription", "recipient", "subject", "body"],
+        },
+      },
+    ],
+  },
 ];
 
+// ─── Model ────────────────────────────────────────────────────────────────────
+// Using gemini-2.0-flash for stability.
+// gemini-2.5-flash is more capable but frequently returns 503 under high demand.
+// Switch back once availability improves.
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash",
+  model: "gemini-2.0-flash",
   systemInstruction,
-  tools
+  tools,
 });
 
 async function processPrompt(jobDescription) {
   try {
     console.log("\n=== NEW TASK ===");
-    console.log("Job Description:", jobDescription);
+    console.log("Job:", jobDescription.slice(0, 80) + "...");
 
     const chat = model.startChat({});
-    let result = await chat.sendMessage(
-      `Analyze and generate outreach for this job:\n${jobDescription}`
+
+    let result = await withRetry(() =>
+      chat.sendMessage(`Analyze and generate outreach for this job:\n${jobDescription}`)
     );
 
     let stagedTask = null;
@@ -129,71 +117,52 @@ async function processPrompt(jobDescription) {
 
     while (calls && calls.length > 0) {
       const call = calls[0];
-
-      console.log("\n🔧 TOOL CALL:", call.name);
+      console.log("\n[Tool call]", call.name);
 
       let toolResult;
 
       if (call.name === "get_my_profile") {
         const profile = await getProfile();
-        console.log("Profile fetched");
+        console.log("[Profile] fetched:", profile?.name);
         toolResult = { profile };
-      }
 
-      else if (call.name === "stage_outreach") {
+      } else if (call.name === "stage_outreach") {
         const args = call.args;
-
-        console.log("Staging email...");
-        console.log("Match Level:", args.matchLevel);
-        console.log("Match Reason:", args.matchReason);
+        console.log("[Stage] matchLevel:", args.matchLevel);
 
         stagedTask = await stageEmail({
           jobDescription: args.jobDescription,
-          recipient: args.recipient || "hiring_manager@example.com",
-          subject: args.subject,
-          body: args.body,
-          matchLevel: args.matchLevel,
-          matchReason: args.matchReason,
-          suggestions: args.suggestions || []
+          recipient:      args.recipient || "hiring_manager@example.com",
+          subject:        args.subject,
+          body:           args.body,
+          matchLevel:     args.matchLevel,
+          matchReason:    args.matchReason,
+          suggestions:    args.suggestions || [],
         });
 
-        toolResult = {
-          success: true,
-          taskId: stagedTask._id
-        };
+        toolResult = { success: true, taskId: stagedTask._id };
+
+      } else {
+        toolResult = { error: `Unknown tool: ${call.name}` };
       }
 
-      else {
-        toolResult = { error: "Unknown tool" };
-      }
-
-      result = await chat.sendMessage([
-        {
-          functionResponse: {
-            name: call.name,
-            response: toolResult
-          }
-        }
-      ]);
+      result = await withRetry(() =>
+        chat.sendMessage([{
+          functionResponse: { name: call.name, response: toolResult },
+        }])
+      );
 
       calls = result.response.functionCalls();
     }
 
-    console.log("\n=== FINAL ===");
-    console.log("Task created:", stagedTask?._id);
+    console.log("\n=== DONE ===");
+    console.log("Task:", stagedTask?._id ?? "none");
 
-    return {
-      success: true,
-      task: stagedTask
-    };
+    return { success: true, task: stagedTask };
 
   } catch (error) {
-    console.error("AI PROCESS ERROR:", error);
-
-    return {
-      success: false,
-      error: error.message
-    };
+    console.error("[geminiService] processPrompt error:", error.message);
+    return { success: false, error: error.message };
   }
 }
 

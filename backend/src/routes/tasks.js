@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Task = require('../models/Task');
 const taskWorker = require('../workers/taskWorker');
+const aicore = require('../services/aiCoreService');
 const { generateEmail, generateMatchAnalysis } = require('../services/aiService');
 const { sendEmail } = require('../services/emailService');
 
@@ -40,20 +41,39 @@ router.post('/', async (req, res) => {
     const trimmed = input.trim();
     const type = inferType(trimmed);
 
-    // Generate match analysis
-    let matchAnalysis = null;
-    try {
-      matchAnalysis = await generateMatchAnalysis(trimmed);
-    } catch (aiError) {
-      console.error('[POST /tasks] AI match analysis failed:', aiError);
+    const aiCore = require("../services/aiCoreService");
+
+    const userId = req.user?.id || null;
+    const profile = await aiCore.getUserProfile(userId);
+    let matchAnalysis = await aiCore.generateMatchAnalysis(
+      trimmed,
+      profile
+    );
+
+    // If analysis failed or returned null, provide a graceful fallback
+    if (!matchAnalysis || typeof matchAnalysis !== 'object') {
       matchAnalysis = {
         level: 'MEDIUM',
         score: 50,
-        reason: 'Unable to analyze match at this time',
-        missing: ['Analysis unavailable'],
-        strength: ['Basic skills'],
+        reason: 'Unable to parse AI response properly.',
+        missing: [],
+        strength: [],
         insight: 'Please review manually',
-        suggestions: ['Review job requirements manually']
+        suggestions: []
+      };
+    }
+
+
+    // If analysis failed or returned null, provide a graceful fallback
+    if (!matchAnalysis || typeof matchAnalysis !== 'object') {
+      matchAnalysis = {
+        level: 'MEDIUM',
+        score: 50,
+        reason: 'Unable to parse AI response properly.',
+        missing: [],
+        strength: [],
+        insight: 'Please review manually',
+        suggestions: []
       };
     }
 
@@ -87,14 +107,12 @@ router.post('/:id/approve', async (req, res) => {
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
-    // Simply mark the task as completed in the database
     task.status = 'COMPLETED';
     task.approvedAt = new Date();
     task.completedAt = new Date();
     
     await task.save();
 
-    // Send the success response back to the frontend
     res.json(task);
 
   } catch (err) {
@@ -125,38 +143,29 @@ const { reason } = req.body || {};
 // POST /api/tasks/:id/generate-draft
 router.post('/:id/generate-draft', async (req, res) => {
   try {
+    const aiCore = require("../services/aiCoreService");
+
     const task = await Task.findById(req.params.id);
+
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
     }
-// Replace your IF statement with this inclusive one:
-const allowedStatuses = ['CREATED', 'PENDING_APPROVAL', 'READY_FOR_REVIEW'];
 
-if (!allowedStatuses.includes(task.status)) {
-  return res.status(400).json({ 
-    error: `Status ${task.status} not allowed. Must be one of: ${allowedStatuses.join(', ')}` 
-  });
-}
+    const userId = req.user?.id || null;
+    const profile = await aiCore.getUserProfile(userId);
 
+    const emailText = await aiCore.generateEmail(
+      task.jobDescription,
+      profile,
+      task.matchReason 
+    );
 
-    try {
-      const emailText = await generateEmail(task.jobDescription);
-      const lines = emailText.trim().split('\n');
-      const subject = lines[0].replace(/^Subject:\s*/i, '').trim();
-      const body = lines.slice(1).join('\n').trim();
-      task.subject = subject;
-      task.body = body;
-      task.status = 'READY_FOR_REVIEW';
-      await task.save();
-      res.json(task);
-    } catch (aiError) {
-      console.error('[POST /tasks/:id/generate-draft] AI generation failed:', aiError);
-      task.subject = 'Draft Email';
-      task.body = 'AI email generation failed. Please draft manually.';
-      task.status = 'READY_FOR_REVIEW';
-      await task.save();
-      res.json(task);
-    }
+    task.email = emailText;
+    task.status = "READY_FOR_REVIEW";
+
+    await task.save();
+
+    res.json(task);
   } catch (err) {
     console.error('[POST /tasks/:id/generate-draft]', err);
     res.status(500).json({ error: 'Internal Server Error' });
