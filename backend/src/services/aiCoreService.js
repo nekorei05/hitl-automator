@@ -113,7 +113,7 @@ CRITICAL RULES FOR TONE AND STYLE:
 5. Substance: Seamlessly weave in 2-3 core skills from the job description and map them directly to real projects from the profile. Don't just list skills; briefly mention *how* they were used.
 6. Adaptability: If the profile lacks certain skills, lean into problem-solving or related accomplishments. 
 7. Placeholders: DO NOT use placeholders like [Company Name] or [Insert Link]. Infer the company from the job description, or just say "your team".
-8. Output Format: Return ONLY the plain email text body. Do NOT include a subject line. Do NOT include generic greetings like "Dear Hiring Manager". Do NOT include sign-offs like "Best, [My Name]". Just give me the paragraphs.
+8. Output Format: Return the plain email text body. Do NOT include a subject line. Include a professional sign-off at the end (e.g., "Best regards," or "Looking forward to connecting,") followed by the candidate's name from the profile.
 
 JOB TO ANALYZE:
 ${jobDescription}
