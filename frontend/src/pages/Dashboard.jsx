@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import TaskForm from "../components/TaskForm";
 import TaskCard from "../components/TaskCard";
+import ProfileModal from "../components/ProfileModal";
 import { getTasks } from "../services/api";
-import { Plus, LayoutDashboard } from "lucide-react";
+import { Plus, LayoutDashboard, User } from "lucide-react";
 
 const FILTERS = ["All", "CREATED", "PROCESSING", "READY_FOR_REVIEW", "COMPLETED", "REJECTED"];
 
@@ -37,6 +38,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("All");
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -94,13 +96,22 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <button
-            onClick={() => setSelectedTaskId(null)}
-            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2.5 rounded-lg transition-colors shadow-lg shadow-indigo-900/20"
-          >
-            <Plus className="w-4 h-4" />
-            New Task
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSelectedTaskId(null)}
+              className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2.5 rounded-lg transition-colors shadow-lg shadow-indigo-900/20"
+            >
+              <Plus className="w-4 h-4" />
+              New Task
+            </button>
+            <button
+              onClick={() => setIsProfileOpen(true)}
+              className="px-3 flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium rounded-lg transition-colors border border-zinc-700"
+              title="Profile Settings"
+            >
+              <User className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -173,6 +184,11 @@ export default function Dashboard() {
           )}
         </div>
       </main>
+
+      <ProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+      />
 
     </div>
   );

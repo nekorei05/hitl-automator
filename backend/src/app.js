@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 
 const promptRoutes = require('./routes/prompt');
 const tasksRoutes = require('./routes/tasks');
+const profileRoutes = require('./routes/profile');
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(express.static('public'));
 // Routes
 app.use('/api/prompt', promptRoutes); 
 app.use('/api/tasks', tasksRoutes);  
+app.use('/api/profile', profileRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

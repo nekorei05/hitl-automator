@@ -8,4 +8,8 @@ export const generateDraft = (id) => API.post(`/tasks/${id}/generate-draft`, {})
 export const approveTask = (id) => API.post(`/tasks/${id}/approve`);
 export const rejectTask = (id, reason) => API.post(`/tasks/${id}/reject`, { reason });
 
+// Profile API
+export const getProfile = () => API.get("/profile");
+export const updateProfile = (data) => API.put("/profile", data);
+
 export default API;
