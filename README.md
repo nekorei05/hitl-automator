@@ -51,8 +51,8 @@ The agent handles transient failures with a `withRetry` wrapper — 503 overload
 ## Features
 
 - **Agentic tool-calling** — multi-turn Gemini chat loop with `get_my_profile` and `stage_outreach` as registered tools
-- **Match analysis** — scores job fit HIGH / MEDIUM / LOW with missing skills, strengths, and improvement suggestions
-- **Profile-aware drafting** — email references your actual projects and experience, not a generic template
+- **Match analysis** — scores job fit HIGH / MEDIUM / LOW with missing skills, strengths and improvement suggestions
+- **Profile-aware drafting** — email references your actual projects and experience not a generic template
 - **Human approval gate** — AI cannot move a task past `READY_FOR_REVIEW` without explicit human action
 - **Task lifecycle** — defined state machine from `CREATED` through to `COMPLETED` or `REJECTED`
 - **Agent logs panel** — collapsible terminal-style view in the UI showing every tool call the agent made
